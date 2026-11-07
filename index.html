@@ -211,7 +211,7 @@ var melody=[392,0,392,523,0,440,392,0,330,392,0,523,587,523,440,0,392,0,330,294,
 function startMusic(){stopMusic();if(!soundOn)return;var key=world&&world.def.theme==="night"?"dungeon":world&&world.def.theme==="sunset"?"castle":"field";var a=originalAudio[key];if(!a)return;a.currentTime=0;a.loop=true;a.volume=.28;a.play().catch(function(){})}
 function stopMusic(){["field","dungeon","castle"].forEach(function(k){var a=originalAudio[k];if(a){a.pause();a.currentTime=0}})}
 function makeWorld(index){
- var d=levelDefs[index],solids=[],pipes=[],backdrops=[],coins=[],traps=[],enemies=[],spikes=[],checkpoints=[],goalX=null;
+ var d=levelDefs[index],solids=[],pipes=[],mapPipeParts=[],backdrops=[],coins=[],traps=[],enemies=[],spikes=[],checkpoints=[],goalX=null;
  if(d.originalTiles){
    d.originalTiles.forEach(function(tile){
      var x=tile[0]*29,y=tile[1]*29-12,v=tile[2];
@@ -228,22 +228,24 @@ function makeWorld(index){
      }else if(v===30){
        checkpoints.push({x:x,y:y,activated:false,w:30,h:60});
      }else if(v===40){
-       pipes.push({x:x,y:y,w:60,h:30,kind:"cap",mapPiece:true});
+       mapPipeParts.push({col:tile[0],x:x,y:y,cap:true});
      }else if(v===41){
-       pipes.push({x:x+5,y:y,w:50,h:30,kind:"body",mapPiece:true});
+       mapPipeParts.push({col:tile[0],x:x+5,y:y,cap:false});
      }else if(v===43){
        pipes.push({x:x,y:y+5,w:29,h:53,kind:"vertical",mapPiece:true});
      }else if(v===44){
        pipes.push({x:x,y:y+7,w:39,h:50,kind:"side",mapPiece:true});
      }else if(v>=50&&v<=79){
        var type=v-50,dims={0:[30,30],1:[30,43],2:[30,30],3:[30,44],4:[33,35],5:[37,55],6:[36,50],7:[32,32],8:[37,47],9:[26,30]}[type]||[30,30];
-       enemies.push({x:x,y:y,w:dims[0],h:dims[1],type:type,min:Math.max(0,x-42),max:x+70,speed:38+(type%7)*5,dir:1,alive:true});
+       var dropper=index===0&&type===0&&[10,16,61,63].indexOf(tile[0])>=0;
+       enemies.push({x:x,y:dropper?-55:y,w:dims[0],h:dims[1],type:type,min:Math.max(0,x-42),max:x+70,speed:38+(type%7)*5,dir:1,alive:true,falling:dropper,vy:0});
      }else if(v>=80&&v<=89){
        backdrops.push({x:x,y:y,code:v-80});
      }else if(v===99){
        if(goalX===null||x<goalX)goalX=x;
      }
    });
+   var pipeCols={};mapPipeParts.forEach(function(part){var g=pipeCols[part.col];if(!g)g=pipeCols[part.col]={x:part.x,y:part.y,bottom:part.y,cap:false};g.y=Math.min(g.y,part.y);g.bottom=Math.max(g.bottom,part.y);g.cap=g.cap||part.cap});Object.keys(pipeCols).forEach(function(k){var g=pipeCols[k];pipes.push({x:g.x,y:g.y,w:60,h:g.bottom-g.y+30,kind:"classic",solid:true})});
    var width=d.originalWidth*29+180;
    if(goalX!==null)width=Math.max(width,goalX+150);
    return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:spikes,traps:traps,enemies:enemies,goal:goalX===null?width-110:goalX+18,goalPoleX:goalX===null?width-110:goalX,length:width,checkpoints:checkpoints,rocket:null};
@@ -290,9 +292,8 @@ function update(dt){if(!player||!world||won)return;
  var previousBottom=player.y+player.h-player.vy*dt;
  world.enemies.forEach(function(e){
   if(!e.alive)return;
-  e.x+=e.dir*e.speed*dt;
-  if(e.x<e.min){e.x=e.min;e.dir=1}
-  if(e.x>e.max){e.x=e.max;e.dir=-1}
+  if(e.falling){e.vy=Math.min(520,(e.vy||0)+900*dt);var oldY=e.y;e.y+=e.vy*dt;world.solids.forEach(function(s){if(s.active!==false&&e.x+e.w>s.x&&e.x<s.x+s.w&&oldY+e.h<=s.y+5&&e.y+e.h>=s.y){e.y=s.y-e.h;e.vy=0;e.falling=false}});if(e.y>GROUND-20){e.y=GROUND-e.h;e.falling=false;e.vy=0}}
+  else{e.x+=e.dir*e.speed*dt;if(e.x<e.min){e.x=e.min;e.dir=1}if(e.x>e.max){e.x=e.max;e.dir=-1}}
   var eb={x:e.x+3,y:e.y+3,w:(e.w||30)-6,h:(e.h||30)-5};
   if(intersects(player,eb)){
     if(player.vy>0&&previousBottom<=e.y+Math.min(17,(e.h||30)*.4)){
@@ -313,7 +314,7 @@ function update(dt){if(!player||!world||won)return;
    $("toast").textContent="Punto de control guardado";
   }
  });
- if(world.goalPoleX!==undefined&&!world.rocket&&player.x>=world.goalPoleX-430){var launchPipe=(world.pipes||[]).slice().sort(function(a,b){return b.x-a.x})[0];if(launchPipe){world.rocket={x:launchPipe.x+launchPipe.w+4,y:GROUND-38,w:28,h:28,vx:-245,active:true};}};
+ if(activeLevel===0&&world.goalPoleX!==undefined&&!world.rocket&&player.x>=world.goalPoleX-430){var launchPipe=(world.pipes||[]).slice().sort(function(a,b){return b.x-a.x})[0];if(launchPipe){world.rocket={x:launchPipe.x+launchPipe.w+4,y:GROUND-38,w:28,h:28,vx:-245,active:true};}};
  if(world.rocket&&world.rocket.active){world.rocket.x+=world.rocket.vx*dt;if(world.rocket.x<world.goalPoleX-600)world.rocket.active=false;else if(intersects(player,world.rocket))die();}
  world.traps.forEach(function(t){if(t.type==="fake"&&!t.done){var p=world.solids.find(function(s){return s.type==="fake"&&s.x===t.x});if(p&&p.active===false)t.done=true}});
  if(player.y>455)die();
