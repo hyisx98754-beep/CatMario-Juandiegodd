@@ -251,7 +251,7 @@ function makeWorld(index){
    world.stageZones=[
     {x:20*29+5,y:-60,w:50,h:700,kind:"walkEnemy",fired:false},
     {x:54*29-5,y:-60,w:70,h:700,kind:"dropEnemy",fired:false},
-    {x:67*29,y:-60,w:180,h:700,kind:"laserWave",fired:false},
+    {x:67*29,y:9*29-12,w:180,h:122,kind:"laserWave",fired:false},
     {x:112*29+10,y:-60,w:30,h:700,kind:"onionWave",fired:false},
     {x:117*29,y:31,w:150,h:30,kind:"laser",fired:false},
     {x:125*29,y:-60,w:90,h:700,kind:"dropEnemy",fired:false}
@@ -341,7 +341,7 @@ function update(dt){
   addEnemy(sp.x,sp.y-(dims[1]-30),sp.type,dims[0],dims[1],{floating:sp.type===80||sp.type===81,speed:sp.type===80||sp.type===81?0:undefined,dir:leftward?-1:1,min:leftward?Math.max(0,sp.x-240):undefined,max:leftward?sp.x+20:undefined});
  });
  // The original btype-0 marker at column 27 launches an onion from the flying pipe.
- if(activeLevel===0&&!world.pipeRocketFired&&player.x+player.w>=world.pipeRocketTriggerX){
+ if(activeLevel===0&&!world.pipeRocketFired&&player.x+player.w+Math.max(0,player.vx*dt)>=world.pipeRocketTriggerX){
   world.pipeRocketFired=true;
   if(world.rocketPipe)world.pipeRocket={x:world.rocketPipe.x+15,y:world.rocketPipe.y+6,w:30,h:30,vy:-440,active:true};
  }
