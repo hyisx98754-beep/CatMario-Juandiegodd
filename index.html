@@ -241,7 +241,7 @@ function makeWorld(index){
    pipes.push(flyingPipe);world.rocketPipe=flyingPipe;
    // Source: falling bricks at column 49 and falling floor at column 72.
    solids.push({x:49*29,y:5*29-12,w:3*29,h:29,type:"fallingBlock",active:true,triggered:false,vy:0});
-   solids.push({x:72*29,y:13*29-12,w:5*29,h:29,type:"fallingGround",active:true,standTimer:0,falling:false,vy:0});
+   solids.push({x:72*29,y:13*29-12,w:6*29,h:29,type:"fallingGround",active:true,standTimer:0,falling:false,vy:0});
    // The original 2-tile yellow falling lift at column 74.
    world.yellowLift={x:74*29-15,y:7*29-12,w:60,h:14,active:true,falling:false,vy:0};
    // Extra blocks defined with tyobi() in the original stage source.
@@ -421,7 +421,7 @@ function update(dt){
  if(world.laser&&world.laser.active&&intersects(player,{x:world.laser.x,y:world.laser.y,w:world.laser.w,h:world.laser.h}))die();
  // Only grabbing the real pole starts the automatic climb, camera scroll and castle run.
  var pole={x:world.goalPoleX+7,y:world.goalPoleY,w:18,h:world.goalPoleH||290};
- if(activeLevel===0&&!world.goalSequence&&(!world.finalRocket||!world.finalRocket.active)&&intersects(player,pole)){
+ if(activeLevel===0&&!world.goalSequence&&!player.dead&&!player.onGround&&(!world.finalRocket||!world.finalRocket.active)&&intersects(player,pole)){
   world.goalSequence={phase:"climb",timer:0};player.vx=0;player.vy=0;keys.left=keys.right=keys.jump=false;
  }
  if(player.y>455)die();
@@ -534,7 +534,7 @@ function drawPlatform(s){var x=Math.round(s.x-cam),y=Math.round(s.y);if(x+s.w<0|
  else if(t===102){atlas="items";sx=99}
  else if(t===110){atlas="items";sx=132}
  var dw=e.w||sw,dh=e.h||sh;
- if(!drawAtlas(atlas,sx,sy,sw,sh,x-(dw-sw)/2,y,dw,dh,e.dir>0)){
+ if(!drawAtlas(atlas,sx,sy,sw,sh,x-(dw-sw)/2,y,dw,dh,e.dir<0)){
   if(t===80||t===81)drawCloudFace(x,y,.8,t===81);
   else{ctx.save();if(e.dir>0){ctx.translate(x+dw,0);ctx.scale(-1,1)}rect(x+5,y+5,dw-10,dh-10,"#fff");rect(x+8,y+10,3,4,"#222");rect(x+18,y+10,3,4,"#222");ctx.restore()}
  }
