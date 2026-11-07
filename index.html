@@ -211,60 +211,48 @@ var melody=[392,0,392,523,0,440,392,0,330,392,0,523,587,523,440,0,392,0,330,294,
 function startMusic(){stopMusic();if(!soundOn)return;var key=world&&world.def.theme==="night"?"dungeon":world&&world.def.theme==="sunset"?"castle":"field";var a=originalAudio[key];if(!a)return;a.currentTime=0;a.loop=true;a.volume=.28;a.play().catch(function(){})}
 function stopMusic(){["field","dungeon","castle"].forEach(function(k){var a=originalAudio[k];if(a){a.pause();a.currentTime=0}})}
 function makeWorld(index){
- var d=levelDefs[index],solids=[],pipes=[],mapPipeParts=[],backdrops=[],coins=[],traps=[],enemies=[],spikes=[],checkpoints=[],goalX=null;
+ var d=levelDefs[index],solids=[],pipes=[],mapPipeParts=[],backdrops=[],coins=[],traps=[],enemies=[],enemySpawners=[],spikes=[],checkpoints=[],goalX=null;
  if(d.originalTiles){
-   d.originalTiles.forEach(function(tile){
-     var x=tile[0]*29,y=tile[1]*29-12,v=tile[2];
-     if(v===1||v===4||v===5||v===6||v===8||(v>=11&&v<=19)){
-       solids.push({x:x,y:y,w:29,h:29,type:"atlasTile",code:v,atlasY:d.atlasY||0,active:true,hit:false});
-     }else if(v===2){
-       solids.push({x:x,y:y,w:29,h:29,type:"coinBlock",code:2,atlasY:d.atlasY||0,active:true,hit:false});
-     }else if(v===7){
-       solids.push({x:x,y:y,w:29,h:29,type:"hiddenBlock",code:7,atlasY:d.atlasY||0,hidden:true,active:true,hit:false});
-     }else if(v===9){
-       coins.push({x:x+1,y:y+1,w:24,h:24,collected:false});
-     }else if(v===10){
-       spikes.push({x:x,y:y,w:29,h:29,trigger:x,shown:true,mapTile:true});
-     }else if(v===30){
-       checkpoints.push({x:x,y:y,activated:false,w:30,h:60});
-     }else if(v===40){
-       mapPipeParts.push({col:tile[0],x:x,y:y,cap:true});
-     }else if(v===41){
-       mapPipeParts.push({col:tile[0],x:x+5,y:y,cap:false});
-     }else if(v===43){
-       pipes.push({x:x,y:y+5,w:29,h:53,kind:"vertical",mapPiece:true});
-     }else if(v===44){
-       pipes.push({x:x,y:y+7,w:39,h:50,kind:"side",mapPiece:true});
-     }else if(v>=50&&v<=79){
-       var type=v-50,dims={0:[30,30],1:[30,43],2:[30,30],3:[30,44],4:[33,35],5:[37,55],6:[36,50],7:[32,32],8:[37,47],9:[26,30]}[type]||[30,30];
-       enemies.push({x:x,y:y,w:dims[0],h:dims[1],type:type,min:Math.max(0,x-42),max:x+70,speed:38+(type%7)*5,dir:1,alive:true,falling:false,vy:0});
-     }else if(v>=80&&v<=89){
-       backdrops.push({x:x,y:y,code:v-80});
-     }else if(v===99){
-       if(goalX===null||x<goalX)goalX=x;
-     }
-   });
-   var pipeCols={};mapPipeParts.forEach(function(part){var g=pipeCols[part.col];if(!g)g=pipeCols[part.col]={x:part.x,y:part.y,bottom:part.y,cap:false};g.y=Math.min(g.y,part.y);g.bottom=Math.max(g.bottom,part.y);g.cap=g.cap||part.cap});Object.keys(pipeCols).forEach(function(k){var g=pipeCols[k];pipes.push({x:g.x,y:g.y,w:60,h:g.bottom-g.y+30,kind:"classic",solid:true})});
-   var width=d.originalWidth*29+180;
-   if(goalX!==null)width=Math.max(width,goalX+150);
-   var rocketPipe=null;
-   if(index===0){
-     pipes.push({x:29*29+5,y:9*29-12,w:60,h:118,kind:"classic",solid:true,originalFlying:true});
-     rocketPipe=pipes.filter(function(p){return p.x<=(goalX||width)&&p.x>=(goalX||width)-700}).sort(function(a,b){return b.x-a.x})[0]||null;
-     solids.push({x:72*29,y:13*29-12,w:5*29,h:58,type:"fallingGround",active:true,standTimer:0,falling:false,vy:0});
-     solids.push({x:49*29,y:5*29-12,w:3*29,h:29,type:"fallingBlock",active:true,triggered:false,vy:0});
-     enemies.push({x:27*29,y:9*29-12,w:30,h:30,type:0,min:27*29-35,max:27*29+95,speed:40,dir:1,alive:true,falling:true,vy:0});
-   }
-   if(!checkpoints.length)checkpoints.push({x:Math.round(width*.55),y:GROUND-60,activated:false,w:40,h:60});
-   return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:spikes,traps:traps,enemies:enemies,goal:goalX===null?width-110:goalX+18,goalPoleX:goalX===null?width-110:goalX,length:width,checkpoints:checkpoints,rocketPipe:rocketPipe,rocket:null};
+  d.originalTiles.forEach(function(tile){
+   var x=tile[0]*29,y=tile[1]*29-12,v=tile[2];
+   if(v===1||v===4||v===5||v===6||v===8||(v>=11&&v<=19)){
+    solids.push({x:x,y:y,w:29,h:29,type:"atlasTile",code:v,atlasY:d.atlasY||0,active:true});
+   }else if(v===2){solids.push({x:x,y:y,w:29,h:29,type:"coinBlock",code:2,active:true,hit:false});
+   }else if(v===7){solids.push({x:x,y:y,w:29,h:29,type:"hiddenBlock",code:7,hidden:true,active:true,hit:false});
+   }else if(v===9){coins.push({x:x+1,y:y+1,w:24,h:24,collected:false});
+   }else if(v===10){spikes.push({x:x,y:y,w:29,h:29,trigger:x,shown:true,mapTile:true});
+   }else if(v===30){checkpoints.push({x:x,y:y,w:40,h:60,triggerH:Math.max(30,(12-tile[1])*29),activated:false});
+   }else if(v===40){mapPipeParts.push({col:tile[0],x:x,y:y,cap:true});
+   }else if(v===41){mapPipeParts.push({col:tile[0],x:x+5,y:y,cap:false});
+   }else if(v===43){pipes.push({x:x,y:y+5,w:29,h:53,kind:"vertical",solid:true});
+   }else if(v===44){pipes.push({x:x,y:y+7,w:39,h:50,kind:"side",solid:true});
+   }else if(v>=50&&v<=79){enemySpawners.push({x:x,y:y,type:v-50,spawned:false});
+   }else if(v>=80&&v<=89){backdrops.push({x:x,y:y,code:v-80});
+   }else if(v===99){if(goalX===null||x<goalX)goalX=x;}
+  });
+  var pipeCols={};
+  mapPipeParts.forEach(function(part){var g=pipeCols[part.col];if(!g)g=pipeCols[part.col]={x:part.x,y:part.y,bottom:part.y,cap:false};g.y=Math.min(g.y,part.y);g.bottom=Math.max(g.bottom,part.y);g.cap=g.cap||part.cap;});
+  Object.keys(pipeCols).forEach(function(k){var g=pipeCols[k];pipes.push({x:g.x,y:g.y,w:60,h:g.bottom-g.y+30,kind:"classic",solid:true});});
+  var width=d.originalWidth*29+180;if(goalX!==null)width=Math.max(width,goalX+150);
+  var world={def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:spikes,traps:traps,enemies:enemies,enemySpawners:enemySpawners,goal:goalX===null?width-110:goalX+18,goalPoleX:goalX===null?width-110:goalX,goalPoleY:goalX===null?GROUND-220:2*29-12,goalPoleH:goalX===null?220:290,length:width,checkpoints:checkpoints,rocket:null,rocketPipe:null,onionWaveFired:false,laser:null,yellowLift:null};
+  if(index===0){
+   pipes.push({x:29*29+5,y:9*29-12,w:60,h:118,kind:"classic",solid:true,originalFlying:true});
+   enemySpawners.push({x:27*29,y:9*29-12,type:0,spawned:false,fromPipe:true});
+   world.rocketPipe=pipes.filter(function(p){return p.x<=(goalX||width)&&p.x>=(goalX||width)-700;}).sort(function(a,b){return b.x-a.x;})[0]||null;
+   solids.push({x:49*29,y:5*29-12,w:3*29,h:29,type:"fallingBlock",active:true,triggered:false,vy:0});
+   solids.push({x:72*29,y:13*29-12,w:6*29,h:58,type:"fallingGround",active:true,standTimer:0,falling:false,vy:0});
+   world.yellowLift={x:74*29-15,y:7*29-12,w:60,h:14,active:true,falling:false,vy:0};
+   solids.push({x:67*29,y:9*29-12,w:29,h:29,type:"evilStarBlock",active:true,hit:false});
+   world.onionWaveX=112*29+10;
+   world.laser={triggerX:117*29,x:117*29+90,y:51,w:120,h:15,active:false};
+  }
+  if(!checkpoints.length)checkpoints.push({x:Math.round(width*.55),y:GROUND-60,w:40,h:60,triggerH:80,activated:false});
+  return world;
  }
- d.ground.forEach(function(g){solids.push({x:g[0],y:GROUND,w:g[1],h:80,type:"ground"})});
- d.platforms.forEach(function(p){
-   var fake=(d.traps||[]).some(function(t){return t.type==="fake"&&t.y===p[1]&&p[0]>=t.x&&p[0]<t.x+t.w});
-   solids.push({x:p[0],y:p[1],w:p[2],h:p[3],type:fake?"fake":p[4],active:true,collapse:0,originalY:p[1],hit:false});
- });
- pipes=(d.pipes||[]).map(function(p){var ph=p.h||64;return{x:p.x,y:GROUND-ph,w:46,h:ph,kind:"classic",solid:true}});
- return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:d.spikes.map(function(s){return Object.assign({},s,{shown:false})}),traps:d.traps.map(function(t){return Object.assign({},t,{active:false,timer:0,done:false,drawY:GROUND-52})}),enemies:d.enemies.map(function(e){return Object.assign({},e,{w:30,h:28,type:0,dir:1,alive:true})}),goal:d.length-95,goalPoleX:d.length-95,length:d.length,checkpoints:[{x:Math.round(d.length*.55),y:GROUND-60,activated:false,w:40,h:60}],rocketPipe:null,rocket:null};
+ d.ground.forEach(function(g){solids.push({x:g[0],y:GROUND,w:g[1],h:80,type:"ground"});});
+ d.platforms.forEach(function(p){var fake=(d.traps||[]).some(function(t){return t.type==="fake"&&t.y===p[1]&&p[0]>=t.x&&p[0]<t.x+t.w;});solids.push({x:p[0],y:p[1],w:p[2],h:p[3],type:fake?"fake":p[4],active:true,collapse:0,originalY:p[1],hit:false});});
+ pipes=(d.pipes||[]).map(function(p){var ph=p.h||64;return{x:p.x,y:GROUND-ph,w:46,h:ph,kind:"classic",solid:true};});
+ return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:d.spikes.map(function(s){return Object.assign({},s,{shown:false});}),traps:d.traps.map(function(t){return Object.assign({},t,{active:false,timer:0,done:false,drawY:GROUND-52});}),enemies:d.enemies.map(function(e){return Object.assign({},e,{w:30,h:28,type:0,dir:1,alive:true,onGround:false,vy:0});}),enemySpawners:[],goal:d.length-95,goalPoleX:d.length-95,goalPoleY:GROUND-220,goalPoleH:220,length:d.length,checkpoints:[{x:Math.round(d.length*.55),y:GROUND-60,w:40,h:60,triggerH:80,activated:false}],rocket:null,rocketPipe:null,onionWaveFired:false,laser:null,yellowLift:null};
 }
 function startLevel(index){unlockAudio();activeLevel=index;world=makeWorld(index);var spawnX=index===3?75:index===5?120:index===2?60:28;var spawnY=index===3?270:index===2?30:index===5?60:GROUND-31;player={x:spawnX,y:spawnY,w:22,h:28,vx:0,vy:0,onGround:false,dead:false,deathWait:0,spawnX:spawnX,spawnY:spawnY,face:1,coyote:0};cam=0;deaths=0;particles=[];won=false;paused=false;$("gameLabel").textContent="NIVEL "+(index+1)+" — "+levelDefs[index].name.toUpperCase();$("toast").textContent="";$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));showScreen("game");gameLive=true;lastTime=performance.now();startMusic();draw();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);canvas.focus();setTimeout(function(){canvas.focus()},0)}
 function restartLevel(){if(world)startLevel(activeLevel)}
