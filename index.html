@@ -366,7 +366,7 @@ function drawPlatform(s){var x=Math.round(s.x-cam),y=Math.round(s.y);if(x+s.w<0|
  if(s.type==="question"){drawQuestionTile(x,y,s.hit);return}
  if(s.type==="coinBlock"){drawCoinBlock(x,y,s.hit);return}
  if(s.type==="hiddenBlock"||s.hidden)return;
- if(s.type==="fake"||s.type==="brick"){if(!drawAtlas("blocks",33,0,30,30,x,y,29,29))drawBrickTile(x,y);return}
+ if(s.type==="fake"||s.type==="brick"){if(!drawAtlas("blocks",0,0,30,30,x,y,29,29))drawBrickTile(x,y);return}
  for(var bx=0;bx<s.w;bx+=29){for(var by=0;by<s.h;by+=29){if(!drawAtlas("blocks",0,0,30,30,x+bx,y+by,29,29))drawBrickTile(x+bx,y+by)}}
 }function drawSpike(s){
  if(!s.shown)return;
