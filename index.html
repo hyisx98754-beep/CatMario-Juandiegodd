@@ -467,12 +467,10 @@ function drawFinalFlag(){
 }
 function drawRocket(r){
  var x=Math.round(r.x-cam),y=Math.round(r.y);
- ctx.save();
- if(r.vx<0){ctx.translate(x+30,0);ctx.scale(-1,1);x=0}
- ctx.fillStyle="#ed3c22";ctx.beginPath();ctx.moveTo(x-4,y+7);ctx.lineTo(x-23,y+13);ctx.lineTo(x-5,y+20);ctx.closePath();ctx.fill();
- ctx.fillStyle="#ffc64b";ctx.beginPath();ctx.moveTo(x-7,y+10);ctx.lineTo(x-17,y+13);ctx.lineTo(x-7,y+17);ctx.closePath();ctx.fill();
- drawEnemy({x:x,y:y,w:30,h:30,type:0,dir:1});
- ctx.restore();
+ var tailX=r.vx<0?x+27:x-4,tipX=r.vx<0?x+50:x-23;
+ ctx.fillStyle="#ed3c22";ctx.beginPath();ctx.moveTo(tailX,y+7);ctx.lineTo(tipX,y+13);ctx.lineTo(tailX,y+20);ctx.closePath();ctx.fill();
+ ctx.fillStyle="#ffc64b";ctx.beginPath();ctx.moveTo(r.vx<0?x+32:x-7,y+10);ctx.lineTo(r.vx<0?x+44:x-17,y+13);ctx.lineTo(r.vx<0?x+32:x-7,y+17);ctx.closePath();ctx.fill();
+ drawEnemy({x:r.x,y:r.y,w:30,h:30,type:0,dir:r.vx<0?-1:1});
 }
 function drawGoal(){
  if(world.checkpoints)world.checkpoints.forEach(drawCheckpointFlag);
