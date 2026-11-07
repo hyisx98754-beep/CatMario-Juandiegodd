@@ -283,25 +283,58 @@ function respawn(){var sx=player.spawnX,sy=player.spawnY;world=makeWorld(activeL
 function update(dt){
  if(!player||!world||won)return;
  if(player.dead){player.deathWait-=dt;if(player.deathWait<=0)respawn();return}
- function addEnemy(x,y,type,w,h){world.enemies.push({x:x,y:y,w:w,h:h,type:type,min:Math.max(0,x-80),max:x+130,speed:42+(type%6)*4,dir:1,alive:true,falling:true,onGround:false,vy:0})}
- // Falling blocks activate when the player jumps into them from underneath.
+ // Once the real pole is grabbed, input is locked and the original climb/run sequence takes over.
+ if(world.goalSequence){
+  var gs=world.goalSequence;gs.timer+=dt;
+  if(gs.phase==="climb"){
+   player.vx=0;player.vy=0;player.face=1;player.x=world.goalPoleX+5;
+   var targetY=world.goalPoleY-24;player.y=Math.max(targetY,player.y-365*dt);
+   if(player.y<=targetY+1||gs.timer>=.82){gs.phase="run";gs.timer=0;player.y=GROUND-player.h;player.onGround=true}
+  }else if(gs.phase==="run"){
+   player.vx=0;player.vy=0;player.face=1;player.y=GROUND-player.h;player.onGround=true;
+   player.x+=190*dt;
+   if(gs.timer>=1.2){won=true;gameLive=false;stopMusic();sfx("clear");$("toast").textContent="¡NIVEL COMPLETADO!";}
+  }
+  cam=Math.max(0,Math.min(world.length-W,player.x-145));
+  particles.forEach(function(p){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=280*dt;p.life-=dt});particles=particles.filter(function(p){return p.life>0});
+  return;
+ }
+ function addEnemy(x,y,type,w,h,opts){
+  opts=opts||{};
+  world.enemies.push({x:x,y:y,w:w,h:h,type:type,min:opts.min===undefined?Math.max(0,x-80):opts.min,max:opts.max===undefined?x+130:opts.max,speed:opts.speed===undefined?42+(type%6)*4:opts.speed,dir:opts.dir||1,alive:true,falling:!opts.verticalMover&&!opts.floating,onGround:false,vy:opts.vy||0,verticalMover:!!opts.verticalMover,floating:!!opts.floating,faceShown:false,collectible:!!opts.collectible,poisonous:!!opts.poisonous});
+ }
+ // Falling blocks activate only when the player jumps up into their underside.
  world.solids.forEach(function(s){
   if(s.type!=="fallingBlock"||!s.active)return;
   if(!s.triggered&&player.x+player.w>s.x+8&&player.x<s.x+s.w-8&&player.y>s.y+s.h-4)s.triggered=true;
   if(s.triggered){s.vy=Math.min(620,(s.vy||0)+900*dt);s.y+=s.vy*dt;if(intersects(player,s))die();if(s.y>GROUND+100)s.active=false}
  });
- // Spawn map enemies as their markers enter the playable area.
+ // Original stage-specific invisible trigger zones.
+ (world.stageZones||[]).forEach(function(z){
+  if(z.fired||!intersects(player,z))return;
+  z.fired=true;
+  if(z.kind==="riseEnemy"){addEnemy(z.x+10,GROUND-45,3,30,44,{verticalMover:true,vy:-145,speed:0})}
+  else if(z.kind==="dropEnemy"){addEnemy(z.x+60,-42,3,30,44,{verticalMover:true,vy:165,speed:0})}
+  else if(z.kind==="startRocket"){
+   // Original type-5 sprite from omake2.png; it rises out of the floor.
+   addEnemy(70,GROUND-55,5,37,55,{verticalMover:true,vy:-430,speed:0});
+  }else if(z.kind==="onionWave"){
+   // Four original onions fall from above and then travel left across the stairs.
+   for(var oi=0;oi<4;oi++){var ox=z.x+oi*30;addEnemy(ox,-42,0,30,30,{dir:-1,min:Math.max(0,ox-250),max:ox+20,speed:76})}
+  }else if(z.kind==="laser"){
+   // Original type-79 yellow beam is spawned only when the player jumps into this high trigger.
+   world.laser={x:117*29+90,y:51,w:120,h:15,active:true};
+  }
+ });
+ // Spawn map enemies as their source markers enter the playable area.
  (world.enemySpawners||[]).forEach(function(sp){
   if(sp.spawned||player.x+W<sp.x-90||player.x>sp.x+W+90)return;
   sp.spawned=true;
-  var dims={0:[30,30],1:[30,43],2:[30,30],3:[30,44],4:[33,35],5:[37,55],6:[36,50],7:[32,32],8:[37,47],9:[26,30]}[sp.type]||[30,30];
-  addEnemy(sp.x,sp.y-(dims[1]-30),sp.type,dims[0],dims[1]);
+  var dims={0:[30,30],1:[30,43],2:[30,30],3:[30,44],4:[33,35],5:[37,55],6:[36,50],7:[32,32],8:[37,47],9:[26,30],80:[70,40],81:[70,40]}[sp.type]||[30,30];
+  var leftward=activeLevel===0&&sp.x>=95*29;
+  addEnemy(sp.x,sp.y-(dims[1]-30),sp.type,dims[0],dims[1],{floating:sp.type===80||sp.type===81,speed:sp.type===80||sp.type===81?0:undefined,dir:leftward?-1:1,min:leftward?Math.max(0,sp.x-240):undefined,max:leftward?sp.x+20:undefined});
  });
- // The source level releases exactly four onions from above at column 112.
- if(activeLevel===0&&world.onionWaveX&&!world.onionWaveFired&&player.x+player.w>=world.onionWaveX){
-  world.onionWaveFired=true;for(var oi=0;oi<4;oi++)addEnemy(world.onionWaveX+oi*30,-38,0,30,30);
- }
- // The original yellow lift starts falling when stood on.
+ // The yellow lift at column 74 falls when the player stands on it.
  if(world.yellowLift&&world.yellowLift.active&&world.yellowLift.ridden){world.yellowLift.vy=Math.min(520,(world.yellowLift.vy||0)+720*dt);world.yellowLift.y+=world.yellowLift.vy*dt;if(world.yellowLift.y>GROUND+65)world.yellowLift.active=false}
  var speed=155,accel=950;
  if(keys.left){player.vx-=accel*dt;player.face=-1}
@@ -314,13 +347,14 @@ function update(dt){
  var previousY=player.y,previousBottom=player.y+player.h;
  player.x+=player.vx*dt;
  solidList().forEach(function(s){
-  if(s.type==="atlasTile")return;
+  if(s.type==="atlasTile"&&(s.code===4||s.code===7))return;
   var verticalOverlap=Math.min(player.y+player.h,s.y+s.h)-Math.max(player.y,s.y);
   if(intersects(player,s)&&verticalOverlap>4){if(player.vx>0)player.x=s.x-player.w;else if(player.vx<0)player.x=s.x+s.w;player.vx=0}
  });
  player.y+=player.vy*dt;player.onGround=false;
- // Solid platforms; hidden blocks are handled separately as upward-only collisions.
+ // Ordinary platforms, walls and pipes.
  solidList().forEach(function(s){
+  if(s.type==="atlasTile"&&s.code===4&&player.vy<0)return;
   if(!intersects(player,s))return;
   if(player.vy>0&&previousBottom<=s.y+Math.max(4,Math.abs(player.vy*dt)+3)){
    player.y=s.y-player.h;player.vy=0;player.onGround=true;
@@ -330,15 +364,19 @@ function update(dt){
   }else if(player.vy<0&&previousY+player.h>=s.y+s.h-4){
    player.y=s.y+s.h;player.vy=0;
    if((s.type==="question"||s.type==="coinBlock")&&!s.hit){s.hit=true;world.coins.push({x:s.x+4,y:s.y-18,w:21,h:21,vy:-185,timer:.52,fromBlock:true,collected:false});particles.push({x:s.x+s.w/2,y:s.y-8,vx:0,vy:-90,life:.35,color:"#ffd34f"})}
-   if(s.type==="evilStarBlock"&&!s.hit){s.hit=true;addEnemy(s.x,s.y-30,110,30,30)}
+   if(s.type==="eventBlock"&&!s.hit){
+    s.hit=true;
+    if(s.eventCode===101){addEnemy(s.x,s.y-28,3,30,44,{verticalMover:true,vy:-150,speed:0})}
+    else if(s.eventCode===103||s.eventCode===110){addEnemy(s.x,s.y-28,102,30,30,{verticalMover:true,vy:-100,speed:0,poisonous:true})}
+    else if(s.eventCode===104){addEnemy(s.x,s.y-28,110,30,30,{verticalMover:true,vy:-100,speed:0,poisonous:true})}
+    else if(s.eventCode===112){for(var ci=0;ci<5;ci++)world.coins.push({x:s.x+ci*5,y:s.y-22,w:12,h:16,vy:-150-Math.random()*30,timer:.65,fromBlock:true,collected:false})}
+    else{world.coins.push({x:s.x+4,y:s.y-18,w:21,h:21,vy:-185,timer:.52,fromBlock:true,collected:false})}
+   }
   }
  });
- // Hidden map tiles do not stop walking or falling; only a head hit activates them.
+ // Hidden blocks are one-way: they only react when hit from below.
  world.solids.forEach(function(s){
-  if(s.type==="hiddenBlock"&&s.active!==false&&!s.hit&&player.vy<0&&intersects(player,s)&&previousY>=s.y+s.h-5){
-   player.y=s.y+s.h;player.vy=0;s.hit=true;s.active=false;
-   particles.push({x:s.x+s.w/2,y:s.y-5,vx:0,vy:-55,life:.25,color:"#e0c06a"});
-  }
+  if(s.type==="hiddenBlock"&&s.active!==false&&!s.hit&&player.vy<0&&intersects(player,s)&&previousY>=s.y+s.h-5){player.y=s.y+s.h;player.vy=0;s.hit=true;s.active=false;particles.push({x:s.x+s.w/2,y:s.y-5,vx:0,vy:-55,life:.25,color:"#e0c06a"})}
   if(s.type==="fallingGround"&&s.falling&&s.active){s.vy=Math.min(620,(s.vy||0)+760*dt);s.y+=s.vy*dt;if(s.y>GROUND+95)s.active=false}
  });
  world.spikes.forEach(function(s){if(!s.shown&&player.x+player.w>s.trigger)s.shown=true;var hb=s.mapTile?{x:s.x+5,y:s.y-21,w:(s.w||29)-10,h:21}:{x:s.x,y:GROUND-20,w:s.w,h:20};if(s.shown&&intersects(player,hb))die()});
@@ -346,41 +384,50 @@ function update(dt){
   if(t.type==="fall"&&!t.done){if(!t.active&&player.x+player.w>t.trigger)t.active=true;if(t.active){t.y+=360*dt;if(t.y>GROUND-28)t.y=GROUND-28;if(intersects(player,t))die()}}
   if(t.type==="pop"&&!t.done){if(!t.active&&player.x+player.w>t.trigger){t.active=true;t.timer=0}if(t.active){t.timer+=dt;if(t.timer<.36)t.drawY=GROUND-4-(t.timer/.36)*48;else t.drawY=GROUND-52;if(intersects(player,{x:t.x,y:t.drawY||GROUND-50,w:30,h:30}))die()}}
  });
- // Enemy gravity, landing and wall collisions use the same original map surfaces plus pipes.
+ // Enemy gravity, platform/pipeline collision, and vertical rockets.
  var surfaces=enemySurfaces();
  world.enemies.forEach(function(e){
   if(!e.alive)return;
-  var oldY=e.y,oldBottom=e.y+e.h;e.vy=Math.min(560,(e.vy||0)+920*dt);e.y+=e.vy*dt;e.onGround=false;
-  var landed=null;
-  surfaces.forEach(function(s){if(s.active===false||s.type==="hiddenBlock"||s.type==="fallingBlock")return;if(e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&oldBottom<=s.y+5&&e.y+e.h>=s.y&&e.vy>=0){if(!landed||s.y<landed.y)landed=s}});
-  if(landed){e.y=landed.y-e.h;e.vy=0;e.onGround=true}
-  else if(e.y+e.h>GROUND){e.y=GROUND-e.h;e.vy=0;e.onGround=true}
-  if(e.onGround&&e.speed>0){
-   var step=e.dir*e.speed*dt,nx=e.x+step;
-   var wall=surfaces.find(function(s){if(s.active===false||s.type==="hiddenBlock"||s.type==="fallingBlock")return false;var oy=e.y+e.h>s.y+4&&e.y<s.y+s.h-4;if(!oy)return false;return step>0?nx+e.w>s.x&&e.x+e.w<=s.x+5:nx<s.x+s.w&&e.x>=s.x+s.w-5});
-   if(wall)e.dir*=-1;else e.x=nx;
+  if(e.verticalMover){e.y+=e.vy*dt;if(e.y<-75||e.y>GROUND+80)e.alive=false}
+  else if(!e.floating){
+   var oldY=e.y,oldBottom=e.y+e.h;e.vy=Math.min(560,(e.vy||0)+920*dt);e.y+=e.vy*dt;e.onGround=false;
+   var landed=null;
+   surfaces.forEach(function(s){if(s.active===false||s.type==="hiddenBlock"||s.type==="fallingBlock")return;if(e.x+e.w>s.x+2&&e.x<s.x+s.w-2&&oldBottom<=s.y+5&&e.y+e.h>=s.y&&e.vy>=0){if(!landed||s.y<landed.y)landed=s}});
+   if(landed){e.y=landed.y-e.h;e.vy=0;e.onGround=true}else if(e.y+e.h>GROUND){e.y=GROUND-e.h;e.vy=0;e.onGround=true}
+   if(e.onGround&&e.speed>0){
+    var step=e.dir*e.speed*dt,nx=e.x+step;
+    var wall=surfaces.find(function(s){if(s.active===false||s.type==="hiddenBlock"||s.type==="fallingBlock")return false;var oy=e.y+e.h>s.y+4&&e.y<s.y+s.h-4;if(!oy)return false;return step>0?nx+e.w>s.x&&e.x+e.w<=s.x+5:nx<s.x+s.w&&e.x>=s.x+s.w-5});
+    if(wall)e.dir*=-1;else e.x=nx;
+   }
   }
-  var eb={x:e.x+4,y:e.y+4,w:e.w-8,h:e.h-6};
-  if(intersects(player,eb)){if(player.vy>0&&previousBottom<=e.y+Math.min(17,e.h*.4)){e.alive=false;player.y=e.y-player.h;player.vy=-255;player.onGround=false;particles.push({x:e.x+e.w/2,y:e.y+e.h/2,vx:0,vy:-45,life:.25,color:"#fff"})}else die()}
+  var eb={x:e.x+4,y:e.y+4,w:(e.w||30)-8,h:(e.h||30)-6};
+  if(intersects(player,eb)){
+   if(e.collectible){e.alive=false;if(e.poisonous)die()}
+   else if(e.type===80){e.type=81;e.faceShown=true;e.speed=0;die()}
+   else if(e.type===110||e.poisonous){die()}
+   else if(player.vy>0&&previousBottom<=e.y+Math.min(17,(e.h||30)*.4)){e.alive=false;player.y=e.y-player.h;player.vy=-255;player.onGround=false;particles.push({x:e.x+e.w/2,y:e.y+e.h/2,vx:0,vy:-45,life:.25,color:"#fff"})}
+   else die();
+  }
  });
  world.coins.forEach(function(c){if(c.collected)return;if(c.fromBlock){c.y+=c.vy*dt;c.vy+=520*dt;c.timer-=dt;if(c.timer<=0)c.fromBlock=false}if(intersects(player,c))c.collected=true});
  world.coins=world.coins.filter(function(c){return !c.collected&&(!c.fromBlock||c.timer>0)});
- // Blue checkpoint: the trigger rectangle is taller than its 40x60 picture.
  world.checkpoints.forEach(function(cp){var hit={x:cp.x,y:cp.y,w:30,h:cp.triggerH||80};if(!cp.activated&&intersects(player,hit)){cp.activated=true;player.spawnX=cp.x+36;player.spawnY=GROUND-31;$("toast").textContent="Punto de control guardado"}});
- // The evil star is fatal when touched.
- world.enemies.forEach(function(e){if(e.alive&&e.type===110&&intersects(player,{x:e.x+3,y:e.y+3,w:24,h:24}))die()});
- // Original final yellow laser activates at map column 117.
- if(activeLevel===0&&world.laser&&!world.laser.active&&player.x+player.w>=world.laser.triggerX)world.laser.active=true;
+ // The final vertical onion rocket is launched from the ground before the pole; jump over it.
+ if(activeLevel===0&&!world.finalRocketFired&&player.x+player.w>=world.finalRocketTriggerX){
+  world.finalRocketFired=true;world.finalRocket={x:world.goalPoleX-58,y:GROUND-55,w:37,h:55,vy:-445,active:true};
+ }
+ if(world.finalRocket&&world.finalRocket.active){world.finalRocket.y+=world.finalRocket.vy*dt;if(world.finalRocket.y<-65)world.finalRocket.active=false;else if(intersects(player,{x:world.finalRocket.x+4,y:world.finalRocket.y+4,w:29,h:45}))die()}
+ // The yellow type-79 beam is stationary and dangerous after its jump-height trigger is hit.
  if(world.laser&&world.laser.active&&intersects(player,{x:world.laser.x,y:world.laser.y,w:world.laser.w,h:world.laser.h}))die();
- // Keep the separate cat rocket near the final pole.
- if(activeLevel===0&&world.goalPoleX!==undefined&&!world.rocket&&player.x+player.w>=world.goalPoleX-430){var launchPipe=world.rocketPipe;if(launchPipe)world.rocket={x:launchPipe.x+launchPipe.w+125,y:GROUND-33,w:30,h:27,vx:-320,active:true}}
- if(world.rocket&&world.rocket.active){world.rocket.x+=world.rocket.vx*dt;if(world.rocket.x<world.goalPoleX-600)world.rocket.active=false;else if(intersects(player,{x:world.rocket.x+3,y:world.rocket.y+3,w:24,h:22}))die()}
+ // Only grabbing the real pole starts the automatic climb, camera scroll and castle run.
+ var pole={x:world.goalPoleX+7,y:world.goalPoleY,w:18,h:world.goalPoleH||290};
+ if(activeLevel===0&&!world.goalSequence&&(!world.finalRocket||!world.finalRocket.active)&&intersects(player,pole)){
+  world.goalSequence={phase:"climb",timer:0};player.vx=0;player.vy=0;keys.left=keys.right=keys.jump=false;
+ }
  if(player.y>455)die();
- if(player.x>world.goal+42&&player.y+player.h>=GROUND-48&&(!world.rocket||!world.rocket.active)){won=true;gameLive=false;stopMusic();sfx("clear");$("toast").textContent="¡NIVEL COMPLETADO!";draw()}
  cam=Math.max(0,Math.min(world.length-W,player.x-145));
  particles.forEach(function(p){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=280*dt;p.life-=dt});particles=particles.filter(function(p){return p.life>0});
-}
-function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+}function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
 function drawCloud(x,y,scale){rect(x,y+8,34*scale,10*scale,"#fff");rect(x+8*scale,y,18*scale,18*scale,"#fff");rect(x+23*scale,y+3*scale,17*scale,15*scale,"#fff");rect(x,y+16*scale,40*scale,3*scale,"#c9eff8")}
 function drawBackground(){
  var sky=world.def.theme==="night"?"#0b0b18":world.def.theme==="sunset"?"#a0b4fa":"#a0b4fa";rect(0,0,W,H,sky);
