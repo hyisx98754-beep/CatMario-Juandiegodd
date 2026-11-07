@@ -260,7 +260,7 @@ function makeWorld(index){
    // The original ordinary-looking cloud at (103, 5) becomes a face trap on contact.
    enemySpawners.push({x:103*29,y:5*29-12+10,type:80,spawned:false,cloudTrap:true});
    // The final pole also has a vertical onion-rocket hazard before it can be grabbed.
-   world.finalRocketTriggerX=world.goalPoleX-220;
+   world.finalRocketTriggerX=world.goalPoleX-130;
    world.finalRocketFired=false;
    world.finalRocket=null;
    world.goalSequence=null;
@@ -313,11 +313,11 @@ function update(dt){
  (world.stageZones||[]).forEach(function(z){
   if(z.fired||!intersects(player,z))return;
   z.fired=true;
-  if(z.kind==="riseEnemy"){addEnemy(z.x+10,GROUND-45,3,30,44,{verticalMover:true,vy:-145,speed:0})}
-  else if(z.kind==="dropEnemy"){addEnemy(z.x+60,-42,3,30,44,{verticalMover:true,vy:165,speed:0})}
+  if(z.kind==="riseEnemy"){addEnemy(z.x+10,GROUND-45,3,30,44,{verticalMover:true,vy:-480,speed:0})}
+  else if(z.kind==="dropEnemy"){addEnemy(z.x+60,-42,3,30,44,{verticalMover:true,vy:720,speed:0})}
   else if(z.kind==="startRocket"){
    // Original type-5 sprite from omake2.png; it rises out of the floor.
-   addEnemy(70,GROUND-55,5,37,55,{verticalMover:true,vy:-430,speed:0});
+   addEnemy(70,GROUND-55,5,37,55,{verticalMover:true,vy:-700,speed:0});
   }else if(z.kind==="onionWave"){
    // Four original onions fall from above and then travel left across the stairs.
    for(var oi=0;oi<4;oi++){var ox=z.x+oi*30;addEnemy(ox,-42,0,30,30,{dir:-1,min:Math.max(0,ox-250),max:ox+20,speed:76})}
@@ -414,7 +414,7 @@ function update(dt){
  world.checkpoints.forEach(function(cp){var hit={x:cp.x,y:cp.y,w:30,h:cp.triggerH||80};if(!cp.activated&&intersects(player,hit)){cp.activated=true;player.spawnX=cp.x+36;player.spawnY=GROUND-31;$("toast").textContent="Punto de control guardado"}});
  // The final vertical onion rocket is launched from the ground before the pole; jump over it.
  if(activeLevel===0&&!world.finalRocketFired&&player.x+player.w>=world.finalRocketTriggerX){
-  world.finalRocketFired=true;world.finalRocket={x:world.goalPoleX-58,y:GROUND-55,w:37,h:55,vy:-445,active:true};
+  world.finalRocketFired=true;world.finalRocket={x:world.goalPoleX-58,y:GROUND-55,w:37,h:55,vy:-700,active:true};
  }
  if(world.finalRocket&&world.finalRocket.active){world.finalRocket.y+=world.finalRocket.vy*dt;if(world.finalRocket.y<-65)world.finalRocket.active=false;else if(intersects(player,{x:world.finalRocket.x+4,y:world.finalRocket.y+4,w:29,h:45}))die()}
  // The yellow type-79 beam is stationary and dangerous after its jump-height trigger is hit.
@@ -423,6 +423,9 @@ function update(dt){
  var pole={x:world.goalPoleX+7,y:world.goalPoleY,w:18,h:world.goalPoleH||290};
  if(activeLevel===0&&!world.goalSequence&&!player.dead&&!player.onGround&&(!world.finalRocket||!world.finalRocket.active)&&intersects(player,pole)){
   world.goalSequence={phase:"climb",timer:0};player.vx=0;player.vy=0;keys.left=keys.right=keys.jump=false;
+ }
+ if(activeLevel!==0&&!player.dead&&player.x>world.goal+42&&player.y+player.h>=GROUND-48){
+  won=true;gameLive=false;stopMusic();sfx("clear");$("toast").textContent="¡NIVEL COMPLETADO!";
  }
  if(player.y>455)die();
  cam=Math.max(0,Math.min(world.length-W,player.x-145));
