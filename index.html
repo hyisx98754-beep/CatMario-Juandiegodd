@@ -178,9 +178,11 @@ function drawAtlas(key,sx,sy,sw,sh,dx,dy,dw,dh,flip){
   var im=originalSprites[key];
   if(!im||!im.complete||!im.naturalWidth)return false;
   ctx.save();
-  if(flip){ctx.translate(dx+(dw||sw),0);ctx.scale(-1,1);dx=0}
-  ctx.drawImage(im,sx,sy,sw,sh,Math.round(dx),Math.round(dy),Math.round(dw||sw),Math.round(dh||sh));
-  ctx.restore();return true;
+  try{
+    if(flip){ctx.translate(dx+(dw||sw),0);ctx.scale(-1,1);dx=0}
+    ctx.drawImage(im,sx,sy,sw,sh,Math.round(dx),Math.round(dy),Math.round(dw||sw),Math.round(dh||sh));
+    ctx.restore();return true;
+  }catch(e){ctx.restore();return false}
 }
 function playOriginalSound(key){
   if(!soundOn)return;
@@ -302,7 +304,7 @@ function drawQuestionTile(x,y,hit){
 function drawPlatform(s){var x=Math.round(s.x-cam),y=Math.round(s.y);if(x+s.w<0||x>W)return;
  if(s.type==="atlasTile"){
    if(s.hidden)return;
-   if(!drawAtlas("blocks",s.code*33,s.atlasY||0,30,30,x,y,29,29))drawBrickTile(x,y);
+   var sx=s.code===8?231:s.code===10?297:s.code*33;if(!drawAtlas("blocks",sx,s.atlasY||0,30,30,x,y,29,29))drawBrickTile(x,y);
    return;
  }
  if(s.type==="ground"){
