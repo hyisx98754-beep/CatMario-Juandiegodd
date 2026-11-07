@@ -206,12 +206,12 @@ function showScreen(name){Object.keys(screens).forEach(function(k){screens[k].cl
 function makeLevelGrid(){var grid=$("levelGrid");grid.innerHTML="";levelDefs.forEach(function(l,i){var b=document.createElement("button");b.className="level-card";b.type="button";b.innerHTML='<span class="level-number">'+(i+1)+'</span><span class="level-name">'+l.name+'</span><span class="level-type">'+(i<6?"Aventura clásica · ":"Mundo extra · ")+"Disponible</span>";b.addEventListener("click",function(){startLevel(i)});grid.appendChild(b)})}
 function unlockAudio(){if(!audio){var AC=window.AudioContext||window.webkitAudioContext;if(AC){audio=new AC()}}if(audio&&audio.state==="suspended")audio.resume()}
 function tone(freq,duration,type,volume,when){if(!soundOn)return;unlockAudio();if(!audio)return;var t=when||audio.currentTime;var osc=audio.createOscillator(),gain=audio.createGain();osc.type=type||"square";osc.frequency.setValueAtTime(freq,t);gain.gain.setValueAtTime(Math.max(.0001,volume||.035),t);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);osc.connect(gain);gain.connect(audio.destination);osc.start(t);osc.stop(t+duration+.02)}
-function sfx(kind){if(kind==="jump")playOriginalSound("jump");else if(kind==="death"||kind==="trap")playOriginalSound("death");else if(kind==="clear")playOriginalSound("clear")}
+function sfx(kind){if(kind==="death")playOriginalSound("death");else if(kind==="clear")playOriginalSound("clear")}
 var melody=[392,0,392,523,0,440,392,0,330,392,0,523,587,523,440,0,392,0,330,294,330,392,0,440];
 function startMusic(){stopMusic();if(!soundOn)return;var key=world&&world.def.theme==="night"?"dungeon":world&&world.def.theme==="sunset"?"castle":"field";var a=originalAudio[key];if(!a)return;a.currentTime=0;a.loop=true;a.volume=.28;a.play().catch(function(){})}
 function stopMusic(){["field","dungeon","castle"].forEach(function(k){var a=originalAudio[k];if(a){a.pause();a.currentTime=0}})}
 function makeWorld(index){
- var d=levelDefs[index],solids=[],pipes=[],backdrops=[],coins=[],traps=[],enemies=[],spikes=[],goalX=null;
+ var d=levelDefs[index],solids=[],pipes=[],backdrops=[],coins=[],traps=[],enemies=[],spikes=[],checkpoints=[],goalX=null;
  if(d.originalTiles){
    d.originalTiles.forEach(function(tile){
      var x=tile[0]*29,y=tile[1]*29-12,v=tile[2];
@@ -226,7 +226,7 @@ function makeWorld(index){
      }else if(v===10){
        spikes.push({x:x,y:y,w:29,h:29,trigger:x,shown:true,mapTile:true});
      }else if(v===30){
-       // Punto de control original: no es una trampa ni debe hacer daño.
+       checkpoints.push({x:x,y:y,activated:false});
      }else if(v===40){
        pipes.push({x:x,y:y,w:60,h:30,kind:"cap",mapPiece:true});
      }else if(v===41){
@@ -246,7 +246,7 @@ function makeWorld(index){
    });
    var width=d.originalWidth*29+180;
    if(goalX!==null)width=Math.max(width,goalX+150);
-   return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:spikes,traps:traps,enemies:enemies,goal:goalX===null?width-110:goalX+18,length:width,checkpoints:[]};
+   return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:spikes,traps:traps,enemies:enemies,goal:goalX===null?width-110:goalX+18,length:width,checkpoints:checkpoints};
  }
  d.ground.forEach(function(g){solids.push({x:g[0],y:GROUND,w:g[1],h:80,type:"ground"})});
  d.platforms.forEach(function(p){
@@ -256,7 +256,7 @@ function makeWorld(index){
  pipes=(d.pipes||[]).map(function(p){var ph=p.h||64;return{x:p.x,y:GROUND-ph,w:46,h:ph,kind:"classic",solid:true}});
  return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:d.spikes.map(function(s){return Object.assign({},s,{shown:false})}),traps:d.traps.map(function(t){return Object.assign({},t,{active:false,timer:0,done:false,drawY:GROUND-52})}),enemies:d.enemies.map(function(e){return Object.assign({},e,{w:30,h:28,type:0,dir:1,alive:true})}),goal:d.length-95,length:d.length,checkpoints:[]};
 }
-function startLevel(index){unlockAudio();activeLevel=index;world=makeWorld(index);var spawnX=(index===2||index===5)?60:28;var spawnY=index===2?30:index===5?60:GROUND-31;player={x:spawnX,y:spawnY,w:22,h:28,vx:0,vy:0,onGround:false,dead:false,deathWait:0,spawnX:spawnX,spawnY:spawnY,face:1,coyote:0};cam=0;deaths=0;particles=[];won=false;paused=false;$("gameLabel").textContent="NIVEL "+(index+1)+" — "+levelDefs[index].name.toUpperCase();$("toast").textContent="";$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));showScreen("game");gameLive=true;lastTime=performance.now();startMusic();draw();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);canvas.focus();setTimeout(function(){canvas.focus()},0)}
+function startLevel(index){unlockAudio();activeLevel=index;world=makeWorld(index);var spawnX=index===3?75:((index===2||index===5)?60:28);var spawnY=index===3?270:index===2?30:index===5?60:GROUND-31;player={x:spawnX,y:spawnY,w:22,h:28,vx:0,vy:0,onGround:false,dead:false,deathWait:0,spawnX:spawnX,spawnY:spawnY,face:1,coyote:0};cam=0;deaths=0;particles=[];won=false;paused=false;$("gameLabel").textContent="NIVEL "+(index+1)+" — "+levelDefs[index].name.toUpperCase();$("toast").textContent="";$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));showScreen("game");gameLive=true;lastTime=performance.now();startMusic();draw();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);canvas.focus();setTimeout(function(){canvas.focus()},0)}
 function restartLevel(){if(world)startLevel(activeLevel)}
 function backToLevels(){showScreen("levels")}
 function intersects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
@@ -307,6 +307,12 @@ function update(dt){if(!player||!world||won)return;
   if(intersects(player,c))c.collected=true;
  });
  world.coins=world.coins.filter(function(c){return !c.collected&&(!c.fromBlock||c.timer>0)});
+ world.checkpoints.forEach(function(cp){
+  if(!cp.activated&&player.x+player.w>=cp.x){
+   cp.activated=true;player.spawnX=cp.x+29;player.spawnY=GROUND-31;
+   $("toast").textContent="Punto de control guardado";
+  }
+ });
  world.traps.forEach(function(t){if(t.type==="fake"&&!t.done){var p=world.solids.find(function(s){return s.type==="fake"&&s.x===t.x});if(p&&p.active===false)t.done=true}});
  if(player.y>455)die();
  if(player.x>world.goal){won=true;gameLive=false;stopMusic();sfx("clear");$("toast").textContent="¡NIVEL COMPLETADO!";draw()}
