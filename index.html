@@ -236,17 +236,35 @@ function makeWorld(index){
   var width=d.originalWidth*29+180;if(goalX!==null)width=Math.max(width,goalX+150);
   var world={def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:spikes,traps:traps,enemies:enemies,enemySpawners:enemySpawners,goal:goalX===null?width-110:goalX+18,goalPoleX:goalX===null?width-110:goalX,goalPoleY:goalX===null?GROUND-220:2*29-12,goalPoleH:goalX===null?220:290,length:width,checkpoints:checkpoints,rocket:null,rocketPipe:null,onionWaveFired:false,laser:null,yellowLift:null};
   if(index===0){
-   pipes.push({x:29*29+5,y:9*29-12,w:60,h:118,kind:"classic",solid:true,originalFlying:true});
-   enemySpawners.push({x:27*29,y:9*29-12,type:0,spawned:false,fromPipe:true});
-   world.rocketPipe=pipes.filter(function(p){return p.x<=(goalX||width)&&p.x>=(goalX||width)-700;}).sort(function(a,b){return b.x-a.x;})[0]||null;
+   // Original flying pipe from stage 1-1 (stype 50).
+   var flyingPipe={x:29*29+5,y:9*29-12,w:60,h:118,kind:"classic",solid:true,originalFlying:true};
+   pipes.push(flyingPipe);world.rocketPipe=flyingPipe;
+   // Source: falling bricks at column 49 and falling floor at column 72.
    solids.push({x:49*29,y:5*29-12,w:3*29,h:29,type:"fallingBlock",active:true,triggered:false,vy:0});
-   solids.push({x:72*29,y:13*29-12,w:6*29,h:58,type:"fallingGround",active:true,standTimer:0,falling:false,vy:0});
+   solids.push({x:72*29,y:13*29-12,w:5*29,h:29,type:"fallingGround",active:true,standTimer:0,falling:false,vy:0});
+   // The original 2-tile yellow falling lift at column 74.
    world.yellowLift={x:74*29-15,y:7*29-12,w:60,h:14,active:true,falling:false,vy:0};
-   solids.push({x:67*29,y:9*29-12,w:29,h:29,type:"evilStarBlock",active:true,hit:false});
-   world.onionWaveX=112*29+10;
-   world.laser={triggerX:117*29,x:117*29+90,y:51,w:120,h:15,active:false};
-  }
-  if(!checkpoints.length)checkpoints.push({x:Math.round(width*.55),y:GROUND-60,w:40,h:60,triggerH:80,activated:false});
+   // Extra blocks defined with tyobi() in the original stage source.
+   [[8,9,100],[13,9,102],[14,5,101],[35,8,110],[47,9,103],[59,9,112],[67,9,104]].forEach(function(b){
+    solids.push({x:b[0]*29,y:b[1]*29-12,w:29,h:29,type:"eventBlock",eventCode:b[2],active:true,hit:false});
+   });
+   // Scripted object zones from the original stype 100/101/102/103 events.
+   world.stageZones=[
+    {x:20*29+5,y:-60,w:50,h:700,kind:"riseEnemy",fired:false},
+    {x:54*29-5,y:-60,w:70,h:700,kind:"dropEnemy",fired:false},
+    {x:5*29+5,y:-60,w:30,h:700,kind:"startRocket",fired:false},
+    {x:112*29+10,y:-60,w:30,h:700,kind:"onionWave",fired:false},
+    {x:117*29,y:31,w:150,h:30,kind:"laser",fired:false},
+    {x:125*29,y:-60,w:90,h:700,kind:"dropEnemy",fired:false}
+   ];
+   // The original ordinary-looking cloud at (103, 5) becomes a face trap on contact.
+   enemySpawners.push({x:103*29,y:5*29-12+10,type:80,spawned:false,cloudTrap:true});
+   // The final pole also has a vertical onion-rocket hazard before it can be grabbed.
+   world.finalRocketTriggerX=world.goalPoleX-220;
+   world.finalRocketFired=false;
+   world.finalRocket=null;
+   world.goalSequence=null;
+  }  if(!checkpoints.length)checkpoints.push({x:Math.round(width*.55),y:GROUND-60,w:40,h:60,triggerH:80,activated:false});
   return world;
  }
  d.ground.forEach(function(g){solids.push({x:g[0],y:GROUND,w:g[1],h:80,type:"ground"});});
@@ -407,6 +425,10 @@ function drawPlatform(s){var x=Math.round(s.x-cam),y=Math.round(s.y);if(x+s.w<0|
    for(var fbx=0;fbx<s.w;fbx+=29){if(!drawAtlas("blocks",33,33,30,30,x+fbx,y,29,29))drawBrickTile(x+fbx,y)}
    return;
  }
+ if(s.type==="eventBlock"){
+   if(!s.hit){if(!drawAtlas("blocks",66,0,30,30,x,y,29,29))drawQuestionTile(x,y,false)}else{if(!drawAtlas("blocks",66,33,30,30,x,y,29,29))drawQuestionTile(x,y,true)}
+   return;
+ }
  if(s.type==="evilStarBlock"){
    if(!s.hit){if(!drawAtlas("blocks",33,0,30,30,x,y,29,29))drawBrickTile(x,y)}else drawQuestionTile(x,y,true);
    return;
@@ -455,13 +477,21 @@ function drawPlatform(s){var x=Math.round(s.x-cam),y=Math.round(s.y);if(x+s.w<0|
 }function drawEnemy(e){
  var x=Math.round(e.x-cam),y=Math.round(e.y),t=e.type||0,atlas="enemies",sx=0,sy=0,sw=30,sh=30;
  if(t===1){sx=33;sh=43}else if(t===2){sx=66}else if(t===3){sx=99;sh=44}else if(t===4){sx=132;sw=33;sh=35}
- else if(t===5){atlas="extras2";sx=0;sw=37;sh=55}else if(t===6){atlas="extras2";sx=76;sw=36;sh=50}
+ else if(t===5){atlas="extras2";sx=0;sw=37;sh=55}
+ else if(t===6){atlas="extras2";sx=76;sw=36;sh=50}
  else if(t===7){sx=199;sw=32;sh=32}else if(t===8){atlas="extras2";sx=187;sw=37;sh=47}
  else if(t===9){sx=232;sw=26;sh=30}
- if(!drawAtlas(atlas,sx,sy,sw,sh,x-(sw-30)/2,y,sw,sh,e.dir>0)){
-   ctx.save();if(e.dir>0){ctx.translate(x+30,0);ctx.scale(-1,1)}
-   rect(x+5,y+5,20,20,"#fff");rect(x+8,y+10,3,4,"#222");rect(x+18,y+10,3,4,"#222");ctx.restore();
+ else if(t===80){atlas="background";sx=151;sy=31;sw=70;sh=40}
+ else if(t===81){atlas="background";sx=151;sy=72;sw=70;sh=40}
+ else if(t===100){atlas="items";sx=33}
+ else if(t===102){atlas="items";sx=99}
+ else if(t===110){atlas="items";sx=132}
+ var dw=e.w||sw,dh=e.h||sh;
+ if(!drawAtlas(atlas,sx,sy,sw,sh,x-(dw-sw)/2,y,dw,dh,e.dir>0)){
+  if(t===80||t===81)drawCloudFace(x,y,.8,t===81);
+  else{ctx.save();if(e.dir>0){ctx.translate(x+dw,0);ctx.scale(-1,1)}rect(x+5,y+5,dw-10,dh-10,"#fff");rect(x+8,y+10,3,4,"#222");rect(x+18,y+10,3,4,"#222");ctx.restore()}
  }
+ if(e.faceShown)drawCloudFace(x,y,.85,true);
 }function drawCheckpointFlag(cp){
  var x=Math.round(cp.x-cam),y=Math.round(cp.y);
  if(!drawAtlas("background",40,182,40,60,x,y,40,60)){
@@ -474,12 +504,7 @@ function drawFinalFlag(){
  rect(x+10,top,10,h-8,"#fff");ctx.strokeStyle="#111";ctx.lineWidth=2;ctx.strokeRect(x+10.5,top+.5,9,h-9);
  ctx.fillStyle="#ffe000";ctx.beginPath();ctx.arc(x+15,top+5,5,0,Math.PI*2);ctx.fill();ctx.strokeStyle="#111";ctx.stroke();
 }
-function drawRocket(r){
- var x=Math.round(r.x-cam),y=Math.round(r.y);
- ctx.fillStyle="#ed3c22";ctx.beginPath();ctx.moveTo(x-5,y+10);ctx.lineTo(x-24,y+18);ctx.lineTo(x-5,y+27);ctx.closePath();ctx.fill();
- ctx.fillStyle="#ffc64b";ctx.beginPath();ctx.moveTo(x-7,y+13);ctx.lineTo(x-18,y+18);ctx.lineTo(x-7,y+23);ctx.closePath();ctx.fill();
- drawAtlas("player",0,0,30,36,x,y,30,36);
-}
+function drawRocket(r){drawEnemy({x:r.x,y:r.y,w:37,h:55,type:5,dir:1,verticalRocket:true})}
 function drawYellowLift(){
  if(!world.yellowLift||!world.yellowLift.active)return;
  var l=world.yellowLift,x=Math.round(l.x-cam),y=Math.round(l.y);
@@ -493,7 +518,14 @@ function drawYellowLaser(){
 function drawGoal(){
  if(world.checkpoints)world.checkpoints.forEach(drawCheckpointFlag);
  drawFinalFlag();drawYellowLift();drawYellowLaser();
- if(world.rocket&&world.rocket.active)drawRocket(world.rocket);
+ if(world.finalRocket&&world.finalRocket.active)drawRocket(world.finalRocket);
+ if(world.goalSequence&&world.goalSequence.phase==="run"){
+  var cx=Math.round(world.goalPoleX+220-cam),cy=GROUND-112;
+  rect(cx+20,cy+32,110,80,"#9a9a9a");rect(cx+42,cy+5,66,107,"#b9b9b9");
+  rect(cx+31,cy+26,18,25,"#2e4359");rect(cx+92,cy+26,18,25,"#2e4359");
+  rect(cx+63,cy+73,24,39,"#49332c");rect(cx+55,cy+1,40,8,"#6c3f30");
+  for(var ti=0;ti<4;ti++)rect(cx+23+ti*26,cy+12,12,12,"#dbdbdb");
+ }
 }function drawCloudFace(x,y,scale,angry){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.fillStyle="#161616";ctx.beginPath();ctx.ellipse(20,13,22,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.ellipse(20,12,20,11,0,0,Math.PI*2);ctx.fill();rect(angry?10:12,9,2,4,"#151515");rect(angry?28:26,9,2,4,"#151515");ctx.strokeStyle="#151515";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(13,17);ctx.quadraticCurveTo(20,22,28,17);ctx.stroke();ctx.restore()}
 function drawPipe(p){
  var x=Math.round(p.x-cam),y=Math.round(p.y),w=p.w||46,h=p.h||30;if(x+w<0||x>W)return;
