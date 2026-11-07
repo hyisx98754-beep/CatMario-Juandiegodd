@@ -331,6 +331,12 @@ function drawPlatform(s){var x=Math.round(s.x-cam),y=Math.round(s.y);if(x+s.w<0|
  }
 }function drawEnemy(e){var x=Math.round(e.x-cam),y=e.y;if(drawAtlas("enemies",0,0,30,30,x-2,y-1,30,30,e.dir<0))return;
  rect(x+5,y+5,17,19,"#fff");rect(x+8,y+10,3,4,"#222");rect(x+17,y+10,3,4,"#222")}function drawGoal(){var x=world.goal-cam;drawAtlas("background",40,182,40,60,x,GROUND-60,40,60);if(!originalSprites.background||!originalSprites.background.complete){rect(x,GROUND-90,4,90,"#222");rect(x+4,GROUND-88,35,21,"#e9df70")}}function drawCloudFace(x,y,scale,angry){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.fillStyle="#161616";ctx.beginPath();ctx.ellipse(20,13,22,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.ellipse(20,12,20,11,0,0,Math.PI*2);ctx.fill();rect(angry?10:12,9,2,4,"#151515");rect(angry?28:26,9,2,4,"#151515");ctx.strokeStyle="#151515";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(13,17);ctx.quadraticCurveTo(20,22,28,17);ctx.stroke();ctx.restore()}
+function drawPipe(p){
+ var x=Math.round(p.x-cam),y=Math.round(p.y);if(x+50<0||x>W)return;
+ rect(x+4,y+12,38,p.h-12,"#00c900");rect(x+8,y+14,7,p.h-14,"#64f55a");rect(x+35,y+14,4,p.h-14,"#008a00");
+ rect(x,y,46,15,"#00bd00");rect(x+3,y+2,40,9,"#30ed30");
+ ctx.strokeStyle="#111";ctx.lineWidth=2;ctx.strokeRect(x+.5,y+.5,45,14);ctx.strokeRect(x+4.5,y+12,37,p.h-12);
+}
 function draw(){if(!world)return;drawBackground();world.solids.forEach(drawPlatform);(world.pipes||[]).forEach(drawPipe);world.spikes.forEach(drawSpike);world.traps.forEach(function(t){var x=t.x-cam;if(t.type==="fall"&&t.active&&!t.done){drawBrickTile(x,t.y)}if(t.type==="pop"&&t.active){var py=t.drawY||GROUND-50;drawCloudFace(x,py,.72,true)}});
  (world.coins||[]).forEach(function(c){if(!c.collected){if(!drawAtlas("items",0,0,30,30,c.x-cam,c.y,25,25)){rect(c.x-cam+8,c.y+3,8,17,"#f4ce39")}}});world.enemies.forEach(function(e){if(e.alive)drawEnemy(e)});drawGoal();if(player)drawCat();particles.forEach(function(p){rect(p.x-cam,p.y,4,4,p.color)});
  if(won){rect(55,140,370,118,"rgba(22,35,51,.88)");ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.strokeRect(58,143,364,112);ctx.fillStyle="#ffe06a";ctx.font="bold 24px Trebuchet MS,Arial";ctx.textAlign="center";ctx.fillText("¡NIVEL COMPLETADO!",240,184);ctx.fillStyle="#fff";ctx.font="bold 13px Trebuchet MS,Arial";ctx.fillText("Puedes elegir otro nivel desde el menú.",240,211);ctx.fillText("Pulsa ENTER para continuar.",240,235)}
