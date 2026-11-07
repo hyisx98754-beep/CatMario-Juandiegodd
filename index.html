@@ -254,7 +254,7 @@ function update(dt){if(!player||!world||won)return;
  if(keys.jump&& (player.onGround||player.coyote>0)){player.vy=-365;player.onGround=false;player.coyote=0;keys.jump=false;sfx("jump")}
  player.vy=Math.min(620,player.vy+930*dt);
  player.x+=player.vx*dt;
- solidList().forEach(function(s){if(intersects(player,s)){if(player.vx>0)player.x=s.x-player.w;else if(player.vx<0)player.x=s.x+s.w;player.vx=0}});
+ solidList().forEach(function(s){var verticalOverlap=Math.min(player.y+player.h,s.y+s.h)-Math.max(player.y,s.y);if(intersects(player,s)&&verticalOverlap>4){if(player.vx>0)player.x=s.x-player.w;else if(player.vx<0)player.x=s.x+s.w;player.vx=0}});
  player.y+=player.vy*dt;player.onGround=false;
  solidList().forEach(function(s){if(intersects(player,s)){if(player.vy>0){player.y=s.y-player.h;player.vy=0;player.onGround=true;if(s.type==="fake"){s.collapse+=dt;if(s.collapse>.28){s.active=false}}}else if(player.vy<0){player.y=s.y+s.h;player.vy=0;if(s.type==="question"&&!s.hit){s.hit=true;particles.push({x:s.x+s.w/2,y:s.y-8,vx:0,vy:-90,life:.5,color:"#ffd34f"})}}}});
  world.spikes.forEach(function(s){if(!s.shown&&player.x+player.w>s.trigger)s.shown=true;if(s.shown&&intersects(player,{x:s.x,y:GROUND-20,w:s.w,h:20}))die()});
@@ -367,7 +367,7 @@ $("levelsBack").addEventListener("click",function(){showScreen("home")});
 $("restart").addEventListener("click",restartLevel);
 $("exitGame").addEventListener("click",function(){showScreen("levels");makeLevelGrid()});
 $("soundToggle").addEventListener("click",function(){soundOn=!soundOn;$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));if(soundOn){unlockAudio();startMusic()}else stopMusic()});
-document.addEventListener("keydown",keyDown,{passive:false});document.addEventListener("keyup",keyUp);window.addEventListener("blur",function(){keys.left=keys.right=keys.jump=false});
+document.addEventListener("keydown",keyDown,{passive:false});document.addEventListener("keyup",keyUp);window.addEventListener("blur",function(){keys.left=keys.right=keys.jump=false});window.addEventListener("error",function(e){var st=$("gameStatus");if(st)st.textContent="Error del juego: "+(e.message||"error desconocido")});
 var dragPointer=null,dragStartX=0;
 canvas.addEventListener("pointerdown",function(e){if(!screens.game.classList.contains("active"))return;dragPointer=e.pointerId;dragStartX=e.clientX;canvas.setPointerCapture(e.pointerId);keys.left=keys.right=keys.jump=false});
 canvas.addEventListener("pointermove",function(e){if(dragPointer!==e.pointerId)return;var dx=e.clientX-dragStartX;keys.left=dx< -12;keys.right=dx>12;keys.jump=e.clientY<canvas.getBoundingClientRect().top+canvas.getBoundingClientRect().height*.42});
