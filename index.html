@@ -63,7 +63,7 @@ main{flex:1;padding:22px 24px 16px}
 .game-tools{display:flex;gap:7px}
 .game-tools button{background:#f4e4aa;border:2px solid #273342;border-radius:3px;padding:6px 9px;font-weight:900;font-size:12px}
 .canvas-wrap{background:#a8b8f5;border:1px solid #555;box-shadow:none;width:min(100%,640px);margin:0 auto;overflow:hidden;position:relative}
-#game{width:100%;height:auto;display:block;aspect-ratio:480/420;image-rendering:pixelated;touch-action:none;background:#a8b8f5}
+#game{width:100%;height:auto;display:block;aspect-ratio:480/420;image-rendering:pixelated;touch-action:none;background:#a8b8f5;outline:none;cursor:crosshair}
 .touch-controls{display:none;justify-content:space-between;align-items:center;max-width:640px;margin:16px auto 0;gap:20px;user-select:none}
 .pad-group{display:flex;gap:10px}
 .touch-button{width:60px;height:52px;border:3px solid #273342;background:#fff1bd;box-shadow:3px 3px 0 #273342;border-radius:6px;font-size:24px;font-weight:1000;touch-action:none}
@@ -131,7 +131,7 @@ main{flex:1;padding:22px 24px 16px}
       <button class="touch-button jump" data-key="jump">SALTAR ▲</button>
     </div>
     <p class="game-help">← → / A D: mover · ESPACIO / ↑ / W: saltar · F1: reiniciar · O: rendirse · ESC: salir</p>
-    <div id="toast" aria-live="polite"></div>
+    <div id="toast" aria-live="polite"></div><div id="gameStatus" class="game-help" aria-live="polite">Controles listos</div>
   </section>
 </main>
 <footer class="footer">CAT MARIO · PROYECTO PERSONAL · CREADO POR JUANDIEGODD</footer>
@@ -153,7 +153,6 @@ var ORIGINAL_SOUND_ROOT="https://raw.githubusercontent.com/tiwb/catmario/master/
 var originalSprites={},originalAudio={};
 function loadOriginalSprite(key,file){
   var im=new Image();
-  im.crossOrigin="anonymous";
   im.onload=function(){originalSprites[key]=im;if(world)draw()};
   im.onerror=function(){console.warn("No se pudo cargar el recurso gráfico:",file)};
   im.src=ORIGINAL_ASSET_ROOT+file;
@@ -237,7 +236,7 @@ function makeWorld(index){
  d.platforms.forEach(function(p){var fake=(d.traps||[]).some(function(t){return t.type==="fake"&&t.y===p[1]&&p[0]>=t.x&&p[0]<t.x+t.w});solids.push({x:p[0],y:p[1],w:p[2],h:p[3],type:fake?"fake":p[4],active:true,collapse:0,originalY:p[1],hit:false})});
  pipes=(d.pipes||[]).map(function(p){var h=p.h||64;return{x:p.x,y:GROUND-h,w:46,h:h,type:"pipe"}});
  return {def:d,solids:solids,pipes:pipes,backdrops:backdrops,coins:coins,spikes:d.spikes.map(function(s){return Object.assign({},s,{shown:false})}),traps:d.traps.map(function(t){return Object.assign({},t,{active:false,timer:0,done:false,drawY:GROUND-52})}),enemies:d.enemies.map(function(e){return Object.assign({},e,{dir:1,alive:true})}),goal:d.length-95,length:d.length};
-}function startLevel(index){unlockAudio();activeLevel=index;world=makeWorld(index);player={x:28,y:GROUND-31,w:22,h:28,vx:0,vy:0,onGround:false,dead:false,deathWait:0,spawnX:28,spawnY:GROUND-31,face:1,coyote:0};cam=0;deaths=0;particles=[];won=false;paused=false;$("gameLabel").textContent="NIVEL "+(index+1)+" — "+levelDefs[index].name.toUpperCase();$("toast").textContent="";$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));showScreen("game");gameLive=true;lastTime=performance.now();startMusic();draw();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);canvas.focus()}
+}function startLevel(index){unlockAudio();activeLevel=index;world=makeWorld(index);player={x:28,y:GROUND-31,w:22,h:28,vx:0,vy:0,onGround:false,dead:false,deathWait:0,spawnX:28,spawnY:GROUND-31,face:1,coyote:0};cam=0;deaths=0;particles=[];won=false;paused=false;$("gameLabel").textContent="NIVEL "+(index+1)+" — "+levelDefs[index].name.toUpperCase();$("toast").textContent="";$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));showScreen("game");gameLive=true;lastTime=performance.now();startMusic();draw();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);canvas.focus();setTimeout(function(){canvas.focus()},0)}
 function restartLevel(){if(world)startLevel(activeLevel)}
 function backToLevels(){showScreen("levels")}
 function intersects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
@@ -297,19 +296,49 @@ function drawBackground(){
  if(s.type==="question"){if(!drawAtlas("blocks",66,0,30,30,x,y,29,29))drawQuestionTile(x,y,s.hit);return}
  if(s.type==="fake"||s.type==="brick"){if(!drawAtlas("blocks",0,0,30,30,x,y,29,29))drawBrickTile(x,y);return}
  for(var bx=0;bx<s.w;bx+=29){for(var by=0;by<s.h;by+=29){if(!drawAtlas("blocks",0,0,30,30,x+bx,y+by,29,29))drawBrickTile(x+bx,y+by)}}
-}function drawSpike(s){if(!s.shown)return;var x=s.x-cam;for(var i=0;i<s.w;i+=16){ctx.fillStyle="#28b83d";ctx.strokeStyle="#16291d";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+i,GROUND);ctx.lineTo(x+i+8,GROUND-23);ctx.lineTo(x+i+16,GROUND);ctx.closePath();ctx.fill();ctx.stroke();rect(x+i+7,GROUND-7,2,4,"#a5e47a")}}function drawCat(){var x=Math.round(player.x-cam),y=Math.round(player.y);var frame=124;if(Math.abs(player.vx)>8&&player.onGround){var step=Math.floor(performance.now()/110)%4;frame=[31,62,93,124][step]}else if(!player.onGround&&player.vy<0){frame=0}
- if(drawAtlas("player",frame,0,30,36,x-4,y-7,30,36,player.face<0))return;
- // Respaldo temporal mientras se descarga el sprite.
- ctx.save();ctx.fillStyle="#fff";ctx.fillRect(x+4,y+4,18,22);ctx.restore()
+}function drawSpike(s){if(!s.shown)return;var x=s.x-cam;for(var i=0;i<s.w;i+=16){ctx.fillStyle="#28b83d";ctx.strokeStyle="#16291d";ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+i,GROUND);ctx.lineTo(x+i+8,GROUND-23);ctx.lineTo(x+i+16,GROUND);ctx.closePath();ctx.fill();ctx.stroke();rect(x+i+7,GROUND-7,2,4,"#a5e47a")}}function drawCat(){
+ var x=Math.round(player.x-cam),y=Math.round(player.y);
+ var frame=124;
+ if(Math.abs(player.vx)>8&&player.onGround){var step=Math.floor(performance.now()/110)%4;frame=[31,62,93,124][step]}
+ else if(!player.onGround&&player.vy<0)frame=0;
+ // El sprite original se intenta primero. Si falla el recorte o la descarga, se dibuja un gato visible de respaldo.
+ var drawn=drawAtlas("player",frame,0,30,36,x-4,y-7,30,36,player.face<0);
+ if(!drawn){
+   ctx.save();
+   ctx.translate(x,y);
+   if(player.face<0){ctx.translate(player.w,0);ctx.scale(-1,1)}
+   // silueta negra, orejas, cara blanca, ojos y nariz rosa
+   ctx.fillStyle="#171717";ctx.fillRect(2,5,20,19);ctx.fillRect(3,0,6,10);ctx.fillRect(15,0,7,10);ctx.fillRect(5,22,6,6);ctx.fillRect(15,22,6,6);
+   ctx.fillStyle="#fff";ctx.fillRect(4,6,16,16);ctx.fillRect(5,2,4,6);ctx.fillRect(16,2,4,6);
+   ctx.fillStyle="#171717";ctx.fillRect(7,11,3,4);ctx.fillRect(15,11,3,4);
+   ctx.fillStyle="#e47787";ctx.fillRect(11,16,4,3);
+   ctx.restore();
+ }
 }function drawEnemy(e){var x=Math.round(e.x-cam),y=e.y;if(drawAtlas("enemies",0,0,30,30,x-2,y-1,30,30,e.dir<0))return;
  rect(x+5,y+5,17,19,"#fff");rect(x+8,y+10,3,4,"#222");rect(x+17,y+10,3,4,"#222")}function drawGoal(){var x=world.goal-cam;drawAtlas("background",40,182,40,60,x,GROUND-60,40,60);if(!originalSprites.background||!originalSprites.background.complete){rect(x,GROUND-90,4,90,"#222");rect(x+4,GROUND-88,35,21,"#e9df70")}}function drawCloudFace(x,y,scale,angry){ctx.save();ctx.translate(x,y);ctx.scale(scale,scale);ctx.fillStyle="#161616";ctx.beginPath();ctx.ellipse(20,13,22,13,0,0,Math.PI*2);ctx.fill();ctx.fillStyle="#fff";ctx.beginPath();ctx.ellipse(20,12,20,11,0,0,Math.PI*2);ctx.fill();rect(angry?10:12,9,2,4,"#151515");rect(angry?28:26,9,2,4,"#151515");ctx.strokeStyle="#151515";ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(13,17);ctx.quadraticCurveTo(20,22,28,17);ctx.stroke();ctx.restore()}
 function draw(){if(!world)return;drawBackground();world.solids.forEach(drawPlatform);(world.pipes||[]).forEach(drawPipe);world.spikes.forEach(drawSpike);world.traps.forEach(function(t){var x=t.x-cam;if(t.type==="fall"&&t.active&&!t.done){drawBrickTile(x,t.y)}if(t.type==="pop"&&t.active){var py=t.drawY||GROUND-50;drawCloudFace(x,py,.72,true)}});
- (world.coins||[]).forEach(function(c){if(!c.collected){if(!drawAtlas("items",0,0,30,30,c.x-cam,c.y,25,25)){rect(c.x-cam+8,c.y+3,8,17,"#f4ce39")}}});world.enemies.forEach(function(e){if(e.alive)drawEnemy(e)});drawGoal();if(!player.dead)drawCat();particles.forEach(function(p){rect(p.x-cam,p.y,4,4,p.color)});
+ (world.coins||[]).forEach(function(c){if(!c.collected){if(!drawAtlas("items",0,0,30,30,c.x-cam,c.y,25,25)){rect(c.x-cam+8,c.y+3,8,17,"#f4ce39")}}});world.enemies.forEach(function(e){if(e.alive)drawEnemy(e)});drawGoal();if(player)drawCat();particles.forEach(function(p){rect(p.x-cam,p.y,4,4,p.color)});
  if(won){rect(55,140,370,118,"rgba(22,35,51,.88)");ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.strokeRect(58,143,364,112);ctx.fillStyle="#ffe06a";ctx.font="bold 24px Trebuchet MS,Arial";ctx.textAlign="center";ctx.fillText("¡NIVEL COMPLETADO!",240,184);ctx.fillStyle="#fff";ctx.font="bold 13px Trebuchet MS,Arial";ctx.fillText("Puedes elegir otro nivel desde el menú.",240,211);ctx.fillText("Pulsa ENTER para continuar.",240,235)}
 }
-function loop(now){if(!gameLive)return;var dt=Math.min(.033,(now-lastTime)/1000||0);lastTime=now;update(dt);draw();if(gameLive)raf=requestAnimationFrame(loop)}
-function keyDown(e){var k=e.key.toLowerCase();if(["arrowleft","arrowright","arrowup"," ","w","a","d"].indexOf(k)>=0&&screens.game.classList.contains("active"))e.preventDefault();if(k==="arrowleft"||k==="a")keys.left=true;if(k==="arrowright"||k==="d")keys.right=true;if(k===" "||k==="arrowup"||k==="w")keys.jump=true;if(k==="f1"){e.preventDefault();if(world)restartLevel()}if(k==="o"&&world)die();if(k==="escape"&&screens.game.classList.contains("active"))backToLevels();if(k==="enter"&&won){showScreen("levels");makeLevelGrid()}}
-function keyUp(e){var k=e.key.toLowerCase();if(k==="arrowleft"||k==="a")keys.left=false;if(k==="arrowright"||k==="d")keys.right=false;if(k===" "||k==="arrowup"||k==="w")keys.jump=false}
+function loop(now){if(!gameLive)return;var dt=Math.min(.033,(now-lastTime)/1000||0);lastTime=now;update(dt);draw();var st=$("gameStatus");if(st&&player)st.textContent="Jugador: "+Math.round(player.x)+" px · "+(player.dead?"reapareciendo":player.onGround?"en el suelo":"en el aire")+" · "+(keys.left?"← ":keys.right?"→ ":"quieto");if(gameLive)raf=requestAnimationFrame(loop)}
+function keyName(e){return (e.key||"").toLowerCase()}
+function keyDown(e){
+ var k=keyName(e);
+ if(["arrowleft","arrowright","arrowup"," ","w","a","d"].indexOf(k)>=0||e.code==="Space"){e.preventDefault()}
+ if(k==="arrowleft"||k==="a")keys.left=true;
+ if(k==="arrowright"||k==="d")keys.right=true;
+ if(k===" "||k==="arrowup"||k==="w"||e.code==="Space")keys.jump=true;
+ if(k==="f1"){e.preventDefault();if(world)restartLevel()}
+ if(k==="o"&&world)die();
+ if(k==="escape"&&screens.game.classList.contains("active"))backToLevels();
+ if(k==="enter"&&won){showScreen("levels");makeLevelGrid()}
+}
+function keyUp(e){
+ var k=keyName(e);
+ if(k==="arrowleft"||k==="a")keys.left=false;
+ if(k==="arrowright"||k==="d")keys.right=false;
+ if(k===" "||k==="arrowup"||k==="w"||e.code==="Space")keys.jump=false;
+}
 function bindTouch(){document.querySelectorAll(".touch-button").forEach(function(b){var key=b.getAttribute("data-key");function set(v,e){if(e)e.preventDefault();if(key==="left")keys.left=v;else if(key==="right")keys.right=v;else keys.jump=v;b.classList.toggle("held",v)}b.addEventListener("pointerdown",function(e){b.setPointerCapture(e.pointerId);set(true,e)});["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){b.addEventListener(ev,function(e){set(false,e)})})})}
 $("openLevels").addEventListener("click",function(){makeLevelGrid();showScreen("levels")});
 $("quickPlay").addEventListener("click",function(){startLevel(0)});
@@ -317,7 +346,13 @@ $("levelsBack").addEventListener("click",function(){showScreen("home")});
 $("restart").addEventListener("click",restartLevel);
 $("exitGame").addEventListener("click",function(){showScreen("levels");makeLevelGrid()});
 $("soundToggle").addEventListener("click",function(){soundOn=!soundOn;$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));if(soundOn){unlockAudio();startMusic()}else stopMusic()});
-window.addEventListener("keydown",keyDown,{passive:false});window.addEventListener("keyup",keyUp);window.addEventListener("blur",function(){keys.left=keys.right=keys.jump=false});bindTouch();makeLevelGrid();draw();
+document.addEventListener("keydown",keyDown,{passive:false});document.addEventListener("keyup",keyUp);window.addEventListener("blur",function(){keys.left=keys.right=keys.jump=false});
+var dragPointer=null,dragStartX=0;
+canvas.addEventListener("pointerdown",function(e){if(!screens.game.classList.contains("active"))return;dragPointer=e.pointerId;dragStartX=e.clientX;canvas.setPointerCapture(e.pointerId);keys.left=keys.right=keys.jump=false});
+canvas.addEventListener("pointermove",function(e){if(dragPointer!==e.pointerId)return;var dx=e.clientX-dragStartX;keys.left=dx< -12;keys.right=dx>12;keys.jump=e.clientY<canvas.getBoundingClientRect().top+canvas.getBoundingClientRect().height*.42});
+function endCanvasPointer(e){if(dragPointer!==e.pointerId)return;dragPointer=null;keys.left=keys.right=keys.jump=false}
+canvas.addEventListener("pointerup",endCanvasPointer);canvas.addEventListener("pointercancel",endCanvasPointer);canvas.setAttribute("tabindex","0");
+bindTouch();makeLevelGrid();draw();
 })();
 </script>
 </body>
