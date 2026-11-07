@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#78c8ec">
+<meta name="description" content="Cat Mario: nueve niveles de plataformas y trampas. Creado por juandiegodd.">
+<title>Cat Mario — juandiegodd</title>
+<style>
+:root{--sky:#83d5f2;--ink:#232a36;--paper:#fff7df;--red:#df3b38;--blue:#2876c8;--green:#3e9b50;--gold:#ffd34f}
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%;font-family:"Trebuchet MS",Arial,sans-serif;color:var(--ink);background:#d9eff8}
+body{padding:18px;background:linear-gradient(#8dd8f0 0 38%,#b8e8f5 38% 100%);background-attachment:fixed}
+button{font:inherit;cursor:pointer}
+.page{width:min(960px,100%);margin:auto;background:#fffdf4;border:5px solid #273342;box-shadow:8px 8px 0 #273342;border-radius:5px;overflow:hidden;min-height:calc(100vh - 36px);display:flex;flex-direction:column}
+.topbar{height:54px;display:flex;align-items:center;justify-content:space-between;padding:0 18px;background:#f5e3a4;border-bottom:4px solid #273342;font-weight:900;letter-spacing:1px}
+.brand{display:flex;align-items:center;gap:9px}
+.brand-mark{width:25px;height:25px;background:#fff;border:3px solid #273342;position:relative;box-shadow:inset -5px -5px #d1d1d1}
+.brand-mark:before,.brand-mark:after{content:"";position:absolute;top:-7px;width:8px;height:8px;background:#fff;border:2px solid #273342;transform:rotate(45deg)}
+.brand-mark:before{left:0}.brand-mark:after{right:0}
+.top-tag{font-size:11px;color:#58616b}
+main{flex:1;padding:22px 24px 16px}
+.screen{display:none}.screen.active{display:block}
+.hero{text-align:center;padding:24px 10px 12px;position:relative;overflow:hidden;background:linear-gradient(#8cdbf2 0 62%,#b7e5fb 62% 100%);border:4px solid #273342;box-shadow:inset 0 -8px #80c96c;margin-bottom:18px;min-height:230px}
+.hero:before,.hero:after{content:"";position:absolute;bottom:18px;width:110px;height:28px;background:#63b95b;clip-path:polygon(0 100%,25% 0,50% 100%,75% 20%,100% 100%);opacity:.8}
+.hero:before{left:-8px}.hero:after{right:-8px}
+.hero-cloud{position:absolute;width:72px;height:19px;background:#fff;border:3px solid #273342;top:28px;left:12%;box-shadow:18px -8px 0 -2px #fff,18px -8px 0 1px #273342,37px 0 0 -2px #fff,37px 0 0 1px #273342}
+.hero-cloud.two{left:auto;right:12%;top:64px;transform:scale(.72)}
+.pixel-cat{width:86px;height:76px;margin:0 auto 7px;position:relative;image-rendering:pixelated}
+.pixel-cat .head{position:absolute;left:16px;top:12px;width:54px;height:42px;background:#fff;border:4px solid #273342;box-shadow:inset -7px -5px #dedede}
+.pixel-cat .ear{position:absolute;top:1px;width:22px;height:24px;background:#fff;border:4px solid #273342;transform:rotate(45deg)}
+.pixel-cat .ear.left{left:16px}.pixel-cat .ear.right{right:13px}
+.pixel-cat .eye{position:absolute;top:29px;width:5px;height:8px;background:#273342;z-index:2}
+.pixel-cat .eye.left{left:32px}.pixel-cat .eye.right{left:55px}
+.pixel-cat .nose{position:absolute;top:41px;left:43px;width:6px;height:4px;background:#e77b8a;z-index:3}
+.pixel-cat .body{position:absolute;left:27px;top:51px;width:38px;height:17px;background:#fff;border:4px solid #273342;box-shadow:inset -5px -3px #ddd}
+.hero h1{font-size:clamp(34px,7vw,58px);line-height:.95;margin:0;color:#fff;text-shadow:4px 4px 0 #263342,-2px -2px 0 #263342,2px -2px 0 #263342,-2px 2px 0 #263342;letter-spacing:2px;position:relative;z-index:1}
+.hero p{font-weight:900;margin:10px 0 0;color:#253444;text-shadow:1px 1px #fff;position:relative;z-index:1}
+.menu-actions{display:flex;justify-content:center;gap:12px;flex-wrap:wrap;margin:18px 0}
+.big-button,.small-button{border:3px solid #273342;border-radius:4px;font-weight:1000;box-shadow:4px 4px 0 #273342;transition:transform .08s,box-shadow .08s}
+.big-button{padding:12px 22px;background:#ffdd59;color:#273342;font-size:17px;min-width:190px}
+.big-button.primary{background:#f05a4f;color:#fff}
+.big-button:active,.small-button:active{transform:translate(3px,3px);box-shadow:1px 1px 0 #273342}
+.credit{text-align:center;margin:19px 0 3px;font-size:13px;font-weight:900}
+.credit a{color:#b5232e;text-decoration:none}
+.youtube{display:inline-flex;vertical-align:middle;align-items:center;justify-content:center;margin-left:7px;width:27px;height:19px;border-radius:6px;background:#e62117;color:#fff;text-decoration:none;box-shadow:0 2px 0 #7e1712}
+.youtube svg{width:13px;height:13px;fill:white}
+.note{text-align:center;color:#69737e;font-size:11px;line-height:1.5;margin:10px auto 0;max-width:650px}
+.section-title{text-align:center;font-size:26px;margin:2px 0 5px;text-transform:uppercase;letter-spacing:1px}
+.section-sub{text-align:center;color:#67717d;font-weight:700;font-size:13px;margin:0 0 18px}
+.level-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:690px;margin:0 auto 18px}
+.level-card{position:relative;min-height:105px;text-align:left;padding:12px 13px;background:#fff4c9;border:3px solid #273342;box-shadow:4px 4px 0 #273342;border-radius:3px;color:#273342}
+.level-card:nth-child(3n+2){background:#dff3ff}.level-card:nth-child(3n){background:#e4f4d9}
+.level-card:hover{transform:translateY(-2px)}
+.level-number{font-size:30px;line-height:1;font-weight:1000;display:block}
+.level-name{display:block;font-size:12px;font-weight:900;margin-top:8px}
+.level-type{display:block;font-size:10px;color:#67717d;margin-top:2px;text-transform:uppercase;letter-spacing:.7px}
+.back-row{text-align:center;margin:12px 0 4px}
+.small-button{padding:8px 15px;background:#f4f4f4;color:#273342;font-size:13px}
+.game-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px;flex-wrap:wrap}
+.game-label{font-weight:1000;font-size:14px}
+.game-tools{display:flex;gap:7px}
+.game-tools button{background:#f4e4aa;border:2px solid #273342;border-radius:3px;padding:6px 9px;font-weight:900;font-size:12px}
+.canvas-wrap{background:#86d8f4;border:4px solid #273342;box-shadow:5px 5px 0 #273342;width:min(100%,640px);margin:0 auto;overflow:hidden;position:relative}
+#game{width:100%;height:auto;display:block;aspect-ratio:480/420;image-rendering:pixelated;touch-action:none;background:#8bdcf4}
+.touch-controls{display:none;justify-content:space-between;align-items:center;max-width:640px;margin:16px auto 0;gap:20px;user-select:none}
+.pad-group{display:flex;gap:10px}
+.touch-button{width:60px;height:52px;border:3px solid #273342;background:#fff1bd;box-shadow:3px 3px 0 #273342;border-radius:6px;font-size:24px;font-weight:1000;touch-action:none}
+.touch-button.jump{width:82px;background:#dff4ff;font-size:14px}
+.touch-button:active,.touch-button.held{background:#ffdb5d;transform:translate(2px,2px);box-shadow:1px 1px 0 #273342}
+.game-help{text-align:center;font-size:11px;color:#67717d;margin:13px 0 2px}
+#toast{min-height:22px;text-align:center;margin:10px 0 0;font-size:13px;font-weight:900;color:#b52a2a}
+.footer{border-top:3px solid #273342;background:#f5e3a4;text-align:center;padding:9px 12px;font-size:11px;font-weight:900;color:#46515e}
+.hidden{display:none!important}
+@media(max-width:600px){body{padding:0;background:#fffdf4}.page{min-height:100vh;border-width:0;box-shadow:none}.topbar{height:48px;padding:0 12px}main{padding:14px 12px}.hero{min-height:210px;padding-top:22px}.level-grid{gap:9px}.level-card{min-height:94px;padding:9px}.level-number{font-size:27px}.touch-controls{display:flex}.touch-button{width:54px;height:50px}.touch-button.jump{width:75px}.top-tag{font-size:9px}}
+@media(min-width:601px) and (pointer:coarse){.touch-controls{display:flex}}
+</style>
+</head>
+<body>
+<div class="page">
+<header class="topbar">
+  <div class="brand"><span class="brand-mark" aria-hidden="true"></span><span>CAT MARIO</span></div>
+  <span class="top-tag">EDICIÓN DE JUANDIEGODD</span>
+</header>
+<main>
+  <section id="home" class="screen active">
+    <div class="hero">
+      <span class="hero-cloud"></span><span class="hero-cloud two"></span>
+      <div class="pixel-cat" aria-hidden="true"><span class="ear left"></span><span class="ear right"></span><span class="head"></span><span class="eye left"></span><span class="eye right"></span><span class="nose"></span><span class="body"></span></div>
+      <h1>CAT MARIO</h1>
+      <p>Un paseo tranquilo... ¿qué podría salir mal?</p>
+    </div>
+    <div class="menu-actions">
+      <button class="big-button primary" id="openLevels">SELECCIONAR NIVEL</button>
+      <button class="big-button" id="quickPlay">JUGAR NIVEL 1</button>
+    </div>
+    <div class="credit">Creado por <a href="https://github.com/hyisx98754-beep" target="_blank" rel="noopener">juandiegodd</a>
+      <a class="youtube" href="https://www.youtube.com/@JuandieGodd" target="_blank" rel="noopener" aria-label="Canal de YouTube de juandiegodd" title="YouTube de juandiegodd">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M23.5 6.2a3 3 0 0 0-2.1-2.1C19.5 3.6 12 3.6 12 3.6s-7.5 0-9.4.5A3 3 0 0 0 .5 6.2 31 31 0 0 0 0 12a31 31 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.1c1.9.5 9.4.5 9.4.5s7.5 0 9.4-.5a3 3 0 0 0 2.1-2.1A31 31 0 0 0 24 12a31 31 0 0 0-.5-5.8ZM9.6 15.6V8.4l6.3 3.6-6.3 3.6Z"/></svg>
+      </a>
+    </div>
+    <p class="note">9 niveles disponibles desde el principio. Teclas: flechas o A/D para moverte, espacio o ↑ para saltar. F1 reinicia, O hace que el gato se rinda y Esc vuelve al menú.</p>
+  </section>
+
+  <section id="levels" class="screen">
+    <h2 class="section-title">Seleccionar nivel</h2>
+    <p class="section-sub">Puedes entrar a cualquiera. No hace falta desbloquearlos.</p>
+    <div id="levelGrid" class="level-grid"></div>
+    <div class="back-row"><button class="small-button" id="levelsBack">← VOLVER AL INICIO</button></div>
+  </section>
+
+  <section id="gameScreen" class="screen">
+    <div class="game-head">
+      <div class="game-label" id="gameLabel">NIVEL 1</div>
+      <div class="game-tools">
+        <button id="soundToggle" aria-pressed="true">♫ SONIDO: SÍ</button>
+        <button id="restart">↻ REINICIAR</button>
+        <button id="exitGame">MENÚ</button>
+      </div>
+    </div>
+    <div class="canvas-wrap">
+      <canvas id="game" width="480" height="420" aria-label="Juego Cat Mario"></canvas>
+    </div>
+    <div class="touch-controls" aria-label="Controles táctiles">
+      <div class="pad-group">
+        <button class="touch-button" data-key="left" aria-label="Mover a la izquierda">◀</button>
+        <button class="touch-button" data-key="right" aria-label="Mover a la derecha">▶</button>
+      </div>
+      <button class="touch-button jump" data-key="jump">SALTAR ▲</button>
+    </div>
+    <p class="game-help">← → / A D: mover · ESPACIO / ↑ / W: saltar · F1: reiniciar · O: rendirse · ESC: salir</p>
+    <div id="toast" aria-live="polite"></div>
+  </section>
+</main>
+<footer class="footer">CAT MARIO · PROYECTO PERSONAL · CREADO POR JUANDIEGODD</footer>
+</div>
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var screens={home:$("home"),levels:$("levels"),game:$("gameScreen")};
+var canvas=$("game"),ctx=canvas.getContext("2d",{alpha:false});
+ctx.imageSmoothingEnabled=false;
+var W=480,H=420,GROUND=366;
+var activeLevel=0,world=null,player=null,lastTime=0,raf=0,cam=0,paused=false,won=false,gameLive=false;
+var keys={left:false,right:false,jump:false};
+var soundOn=true,audio=null,bgmTimer=null,bgmStep=0;
+var deaths=0,particles=[],toastTimer=0;
+var levelDefs=[
+ {name:"Paseo sospechoso",theme:"day",length:1780,ground:[[0,620],[690,510],[1260,520]],platforms:[[235,292,68,16,"brick"],[420,250,48,16,"question"],[770,300,90,16,"brick"],[1030,260,65,16,"question"],[1420,290,100,16,"brick"]],spikes:[{x:530,w:42,trigger:490},{x:970,w:42,trigger:910},{x:1510,w:48,trigger:1460}],traps:[{type:"fall",x:365,y:190,w:28,h:28,trigger:330},{type:"fake",x:820,y:300,w:90,h:16},{type:"pop",x:1180,trigger:1130}],enemies:[{x:900,y:338,min:850,max:1000,speed:34}]},
+ {name:"Bloques desconfiados",theme:"day",length:1900,ground:[[0,440],[505,540],[1110,790]],platforms:[[180,300,90,16,"brick"],[350,250,42,16,"question"],[600,285,100,16,"brick"],[810,230,48,16,"question"],[1220,285,100,16,"brick"],[1500,250,80,16,"brick"]],spikes:[{x:390,w:44,trigger:330},{x:940,w:55,trigger:890},{x:1390,w:45,trigger:1340}],traps:[{type:"fall",x:700,y:175,w:30,h:30,trigger:665},{type:"fake",x:1220,y:285,w:100,h:16},{type:"pop",x:1580,trigger:1530}],enemies:[{x:570,y:338,min:530,max:680,speed:40},{x:1300,y:338,min:1200,max:1370,speed:48}]},
+ {name:"El suelo tiene ideas",theme:"night",length:1950,ground:[[0,530],[600,390],[1060,890]],platforms:[[260,295,80,16,"brick"],[480,245,50,16,"question"],[720,285,90,16,"brick"],[900,235,55,16,"question"],[1280,280,110,16,"brick"],[1580,245,60,16,"question"]],spikes:[{x:445,w:45,trigger:400},{x:820,w:54,trigger:765},{x:1450,w:60,trigger:1395}],traps:[{type:"fake",x:720,y:285,w:90,h:16},{type:"fall",x:1110,y:185,w:34,h:34,trigger:1070},{type:"pop",x:1710,trigger:1650}],enemies:[{x:680,y:338,min:630,max:760,speed:52}]},
+ {name:"Nubes con mal carácter",theme:"day",length:2050,ground:[[0,420],[500,500],[1090,960]],platforms:[[120,300,80,16,"brick"],[310,245,45,16,"question"],[610,280,100,16,"brick"],[830,220,80,16,"brick"],[1150,270,100,16,"brick"],[1400,215,50,16,"question"],[1670,270,100,16,"brick"]],spikes:[{x:370,w:46,trigger:320},{x:960,w:50,trigger:910},{x:1560,w:48,trigger:1510}],traps:[{type:"fall",x:700,y:170,w:30,h:30,trigger:665},{type:"fake",x:1150,y:270,w:100,h:16},{type:"pop",x:1780,trigger:1730}],enemies:[{x:560,y:338,min:515,max:660,speed:44},{x:1300,y:338,min:1220,max:1380,speed:52}]},
+ {name:"La tubería sospechosa",theme:"sunset",length:2150,ground:[[0,600],[690,490],[1260,890]],platforms:[[250,290,70,16,"brick"],[460,235,50,16,"question"],[780,285,100,16,"brick"],[1000,220,60,16,"question"],[1370,275,110,16,"brick"],[1700,235,90,16,"brick"]],spikes:[{x:550,w:50,trigger:500},{x:920,w:60,trigger:860},{x:1500,w:55,trigger:1450}],traps:[{type:"fall",x:390,y:180,w:35,h:35,trigger:350},{type:"fake",x:780,y:285,w:100,h:16},{type:"pop",x:1800,trigger:1750}],enemies:[{x:830,y:338,min:730,max:930,speed:60},{x:1420,y:338,min:1340,max:1510,speed:56}]},
+ {name:"Casi casi",theme:"night",length:2300,ground:[[0,480],[570,550],[1190,1110]],platforms:[[180,290,95,16,"brick"],[390,225,55,16,"question"],[700,285,85,16,"brick"],[940,210,65,16,"question"],[1300,275,110,16,"brick"],[1580,210,55,16,"question"],[1870,275,100,16,"brick"]],spikes:[{x:460,w:54,trigger:405},{x:880,w:60,trigger:820},{x:1510,w:50,trigger:1460},{x:1980,w:45,trigger:1930}],traps:[{type:"fake",x:700,y:285,w:85,h:16},{type:"fall",x:1080,y:170,w:35,h:35,trigger:1040},{type:"pop",x:1740,trigger:1680}],enemies:[{x:620,y:338,min:590,max:700,speed:58},{x:1370,y:338,min:1300,max:1460,speed:65}]},
+ {name:"La fábrica de trampas",theme:"sunset",length:2260,ground:[[0,510],[600,520],[1190,1070]],platforms:[[170,295,100,16,"brick"],[400,235,48,16,"question"],[730,275,105,16,"brick"],[930,215,60,16,"question"],[1270,270,100,16,"brick"],[1540,205,75,16,"brick"],[1870,260,100,16,"brick"]],spikes:[{x:450,w:55,trigger:400},{x:850,w:60,trigger:790},{x:1460,w:55,trigger:1410},{x:1970,w:50,trigger:1920}],traps:[{type:"fall",x:320,y:170,w:34,h:34,trigger:285},{type:"fake",x:730,y:275,w:105,h:16},{type:"pop",x:1120,trigger:1070},{type:"fall",x:1660,y:165,w:34,h:34,trigger:1620}],enemies:[{x:650,y:338,min:615,max:740,speed:68},{x:1350,y:338,min:1280,max:1440,speed:72}]},
+ {name:"Noche de gatos",theme:"night",length:2380,ground:[[0,570],[660,510],[1250,1130]],platforms:[[220,285,75,16,"brick"],[430,220,50,16,"question"],[770,270,100,16,"brick"],[980,205,55,16,"question"],[1350,265,100,16,"brick"],[1620,205,65,16,"question"],[1930,255,100,16,"brick"]],spikes:[{x:510,w:55,trigger:460},{x:900,w:60,trigger:845},{x:1510,w:55,trigger:1460},{x:2040,w:60,trigger:1980}],traps:[{type:"pop",x:350,trigger:300},{type:"fall",x:1120,y:155,w:35,h:35,trigger:1080},{type:"fake",x:1350,y:265,w:100,h:16},{type:"pop",x:1790,trigger:1730}],enemies:[{x:720,y:338,min:680,max:820,speed:72},{x:1430,y:338,min:1370,max:1510,speed:78}]},
+ {name:"El último susto",theme:"sunset",length:2550,ground:[[0,520],[610,530],[1210,570],[1850,700]],platforms:[[180,285,90,16,"brick"],[410,215,55,16,"question"],[730,270,100,16,"brick"],[970,195,60,16,"question"],[1310,260,115,16,"brick"],[1580,195,60,16,"question"],[1920,250,100,16,"brick"],[2220,205,90,16,"brick"]],spikes:[{x:460,w:60,trigger:410},{x:850,w:65,trigger:790},{x:1480,w:60,trigger:1420},{x:2040,w:55,trigger:1980},{x:2320,w:50,trigger:2270}],traps:[{type:"fall",x:320,y:160,w:36,h:36,trigger:285},{type:"fake",x:730,y:270,w:100,h:16},{type:"pop",x:1120,trigger:1060},{type:"fall",x:1740,y:150,w:36,h:36,trigger:1700},{type:"pop",x:2140,trigger:2080}],enemies:[{x:660,y:338,min:620,max:750,speed:78},{x:1370,y:338,min:1310,max:1460,speed:82},{x:1940,y:338,min:1890,max:2020,speed:88}]}
+];
+var palettes={day:{sky:"#83d7f2",far:"#75c66f",near:"#49a84d",sun:"#fff0a1"},night:{sky:"#293d73",far:"#536fa0",near:"#3e8d72",sun:"#fff3b0"},sunset:{sky:"#f5a46d",far:"#c47b62",near:"#647d56",sun:"#ffe29a"}};
+function showScreen(name){Object.keys(screens).forEach(function(k){screens[k].classList.toggle("active",k===name)});if(name!=="game"){stopMusic();gameLive=false;cancelAnimationFrame(raf)}}
+function makeLevelGrid(){var grid=$("levelGrid");grid.innerHTML="";levelDefs.forEach(function(l,i){var b=document.createElement("button");b.className="level-card";b.type="button";b.innerHTML='<span class="level-number">'+(i+1)+'</span><span class="level-name">'+l.name+'</span><span class="level-type">'+(i<6?"Aventura clásica · ":"Mundo extra · ")+"Disponible</span>";b.addEventListener("click",function(){startLevel(i)});grid.appendChild(b)})}
+function unlockAudio(){if(!audio){var AC=window.AudioContext||window.webkitAudioContext;if(AC){audio=new AC()}}if(audio&&audio.state==="suspended")audio.resume()}
+function tone(freq,duration,type,volume,when){if(!soundOn)return;unlockAudio();if(!audio)return;var t=when||audio.currentTime;var osc=audio.createOscillator(),gain=audio.createGain();osc.type=type||"square";osc.frequency.setValueAtTime(freq,t);gain.gain.setValueAtTime(Math.max(.0001,volume||.035),t);gain.gain.exponentialRampToValueAtTime(.0001,t+duration);osc.connect(gain);gain.connect(audio.destination);osc.start(t);osc.stop(t+duration+.02)}
+function sfx(kind){if(!soundOn)return;var t=audio?audio.currentTime:0;if(kind==="jump"){tone(480,.09,"square",.035,t);tone(650,.08,"square",.025,t+.07)}else if(kind==="death"){tone(260,.16,"sawtooth",.04,t);tone(170,.22,"sawtooth",.035,t+.15);tone(90,.28,"triangle",.04,t+.34)}else if(kind==="clear"){[523,659,784,1046].forEach(function(n,i){tone(n,.17,"square",.035,t+i*.13)})}else if(kind==="trap"){tone(190,.12,"square",.025,t);tone(130,.18,"square",.03,t+.12)}}
+var melody=[392,0,392,523,0,440,392,0,330,392,0,523,587,523,440,0,392,0,330,294,330,392,0,440];
+function startMusic(){if(!soundOn||!audio)return;stopMusic();bgmStep=0;function tick(){if(!gameLive||!soundOn)return;var n=melody[bgmStep%melody.length];if(n)tone(n,.16,"square",.012);bgmStep++;bgmTimer=setTimeout(tick,205)}tick()}
+function stopMusic(){if(bgmTimer){clearTimeout(bgmTimer);bgmTimer=null}}
+function makeWorld(index){var d=levelDefs[index];var solids=[];d.ground.forEach(function(g){solids.push({x:g[0],y:GROUND,w:g[1],h:80,type:"ground"})});d.platforms.forEach(function(p){solids.push({x:p[0],y:p[1],w:p[2],h:p[3],type:p[4],active:true,collapse:0,originalY:p[1]})});return {def:d,solids:solids,spikes:d.spikes.map(function(s){return Object.assign({},s,{shown:false})}),traps:d.traps.map(function(t){return Object.assign({},t,{active:false,timer:0,done:false})}),enemies:d.enemies.map(function(e){return Object.assign({},e,{dir:1,alive:true})}),goal:d.length-95,length:d.length}}
+function startLevel(index){unlockAudio();activeLevel=index;world=makeWorld(index);player={x:28,y:GROUND-31,w:22,h:28,vx:0,vy:0,onGround:false,dead:false,deathWait:0,spawnX:28,spawnY:GROUND-31,face:1,coyote:0};cam=0;deaths=0;particles=[];won=false;paused=false;$("gameLabel").textContent="NIVEL "+(index+1)+" — "+levelDefs[index].name.toUpperCase();$("toast").textContent="";$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));showScreen("game");gameLive=true;lastTime=performance.now();startMusic();draw();cancelAnimationFrame(raf);raf=requestAnimationFrame(loop);canvas.focus()}
+function restartLevel(){if(world)startLevel(activeLevel)}
+function backToLevels(){showScreen("levels")}
+function intersects(a,b){return a.x<b.x+b.w&&a.x+a.w>b.x&&a.y<b.y+b.h&&a.y+a.h>b.y}
+function solidList(){return world.solids.filter(function(s){return s.active!==false})}
+function die(){if(player.dead||won)return;player.dead=true;player.deathWait=.72;deaths++;$("toast").textContent="¡OUCH! Las trampas no perdonan.";sfx("death");for(var i=0;i<12;i++)particles.push({x:player.x+11,y:player.y+12,vx:(Math.random()-.5)*140,vy:-Math.random()*130,life:.6,color:i%2?"#fff":"#f0524a"})}
+function respawn(){player.x=player.spawnX;player.y=player.spawnY;player.vx=0;player.vy=0;player.dead=false;player.deathWait=0;world.traps.forEach(function(t){if(t.type==="fall"||t.type==="pop"){t.active=false;t.done=false;t.timer=0}});world.spikes.forEach(function(s){s.shown=false});world.solids.forEach(function(s){if(s.type==="fake"){s.active=true;s.collapse=0;s.y=s.originalY}});world.enemies.forEach(function(e){e.alive=true;e.dir=1});$("toast").textContent=""}
+function update(dt){if(!player||!world||won)return;
+ if(player.dead){player.deathWait-=dt;if(player.deathWait<=0)respawn();return}
+ var speed=155,accel=950;
+ if(keys.left){player.vx-=accel*dt;player.face=-1}
+ if(keys.right){player.vx+=accel*dt;player.face=1}
+ if(!keys.left&&!keys.right)player.vx*=Math.pow(.001,dt);
+ player.vx=Math.max(-speed,Math.min(speed,player.vx));
+ if(player.onGround)player.coyote=.1;else player.coyote=Math.max(0,player.coyote-dt);
+ if(keys.jump&& (player.onGround||player.coyote>0)){player.vy=-365;player.onGround=false;player.coyote=0;keys.jump=false;sfx("jump")}
+ player.vy=Math.min(620,player.vy+930*dt);
+ player.x+=player.vx*dt;
+ solidList().forEach(function(s){if(intersects(player,s)){if(player.vx>0)player.x=s.x-player.w;else if(player.vx<0)player.x=s.x+s.w;player.vx=0}});
+ player.y+=player.vy*dt;player.onGround=false;
+ solidList().forEach(function(s){if(intersects(player,s)){if(player.vy>0){player.y=s.y-player.h;player.vy=0;player.onGround=true;if(s.type==="fake"){s.collapse+=dt;if(s.collapse>.28){s.active=false}}}else if(player.vy<0){player.y=s.y+s.h;player.vy=0;if(s.type==="question"&&!s.hit){s.hit=true;particles.push({x:s.x+s.w/2,y:s.y-8,vx:0,vy:-90,life:.5,color:"#ffd34f"})}}}});
+ world.spikes.forEach(function(s){if(!s.shown&&player.x+player.w>s.trigger)s.shown=true;if(s.shown&&intersects(player,{x:s.x,y:GROUND-20,w:s.w,h:20}))die()});
+ world.traps.forEach(function(t){
+  if(t.type==="fall"&&!t.done){if(!t.active&&player.x+player.w>t.trigger)t.active=true;if(t.active){t.y+=360*dt;if(t.y>GROUND-28)t.y=GROUND-28;if(intersects(player,t))die()}}
+  if(t.type==="pop"&&!t.done){if(!t.active&&player.x+player.w>t.trigger){t.active=true;t.timer=0;sfx("trap")}if(t.active){t.timer+=dt;if(t.timer<.36)t.drawY=GROUND-4-(t.timer/.36)*48;else t.drawY=GROUND-52;if(intersects(player,{x:t.x,y:t.drawY||GROUND-50,w:30,h:30}))die()}}
+ });
+ world.enemies.forEach(function(e){if(!e.alive)return;e.x+=e.dir*e.speed*dt;if(e.x<e.min){e.x=e.min;e.dir=1}if(e.x>e.max){e.x=e.max;e.dir=-1}if(intersects(player,{x:e.x,y:e.y,w:25,h:27}))die()});
+ world.traps.forEach(function(t){if(t.type==="fake"&&!t.done){var p=world.solids.find(function(s){return s.type==="fake"&&s.x===t.x});if(p&&p.active===false)t.done=true}});
+ if(player.y>455)die();
+ if(player.x>world.goal){won=true;gameLive=false;stopMusic();sfx("clear");$("toast").textContent="¡NIVEL COMPLETADO!";draw()}
+ cam=Math.max(0,Math.min(world.length-W,player.x-145));
+ particles.forEach(function(p){p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=280*dt;p.life-=dt});particles=particles.filter(function(p){return p.life>0});
+}
+function rect(x,y,w,h,c){ctx.fillStyle=c;ctx.fillRect(Math.round(x),Math.round(y),Math.round(w),Math.round(h))}
+function drawCloud(x,y,scale){rect(x,y+8,34*scale,10*scale,"#fff");rect(x+8*scale,y,18*scale,18*scale,"#fff");rect(x+23*scale,y+3*scale,17*scale,15*scale,"#fff");rect(x,y+16*scale,40*scale,3*scale,"#c9eff8")}
+function drawBackground(){var pal=palettes[world.def.theme]||palettes.day;var grad=ctx.createLinearGradient(0,0,0,H);grad.addColorStop(0,pal.sky);grad.addColorStop(1,world.def.theme==="night"?"#7188bb":"#d7f5ff");ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);
+ if(world.def.theme==="night"){for(var i=0;i<32;i++){var sx=((i*83+27-cam*.12)%(W+30)+W+30)%(W+30);rect(sx,(i*47)%185,2,2,"#fff6c5")}rect(380,42,28,28,pal.sun);rect(387,35,20,35,pal.sky)}
+ else{rect(382,35,30,30,pal.sun);rect(390,28,14,44,pal.sun)}
+ drawCloud((70-cam*.18+W)%W,66,.8);drawCloud((310-cam*.12+W)%W,115,.65);drawCloud((520-cam*.15+W)%W,48,.72);
+ for(var h=0;h<5;h++){var hx=((h*145-cam*.25)%(W+160)+W+160)%(W+160)-80;ctx.fillStyle=pal.far;ctx.beginPath();ctx.moveTo(hx,GROUND);ctx.lineTo(hx+75,230+(h%2)*35);ctx.lineTo(hx+160,GROUND);ctx.fill()}
+ for(var h2=0;h2<7;h2++){var tx=((h2*100-cam*.48)%(W+120)+W+120)%(W+120)-60;rect(tx,330,28,36,pal.near);rect(tx+7,318,14,16,pal.near);rect(tx+11,310,7,15,"#398c4c")}
+}
+function drawPlatform(s){var x=Math.round(s.x-cam),y=Math.round(s.y);if(x+s.w<0||x>W)return;if(s.type==="ground"){rect(x,y,s.w,s.h,"#b36b37");rect(x,y,s.w,8,"#5cbd43");rect(x,y+8,s.w,3,"#328c42");for(var xx=0;xx<s.w;xx+=24){rect(x+xx,y+17,2,2,"#804b32");rect(x+xx+10,y+29,3,3,"#d18b4c");rect(x+xx+16,y+44,2,2,"#804b32")}return}
+ if(s.type==="question"){rect(x,y,s.w,s.h,"#e9a52e");rect(x+2,y+2,s.w-4,s.h-4,"#ffcf4f");rect(x+5,y+4,s.w-10,3,"#fff0a3");rect(x+s.w/2-3,y+3,6,9,"#fff");rect(x+s.w/2-3,y+13,6,2,"#fff");rect(x+s.w/2-3,y+17,6,3,"#fff");rect(x,y,s.w,2,"#9a5b24")}
+ else{rect(x,y,s.w,s.h,"#bb7040");rect(x,y,s.w,3,"#edb16b");for(var bx=0;bx<s.w;bx+=24){rect(x+bx,y+8,2,8,"#85482e");rect(x+bx+11,y+4,2,10,"#85482e");rect(x+bx+2,y+13,10,2,"#85482e")}}
+}
+function drawSpike(s){var x=s.x-cam;if(!s.shown)return;for(var i=0;i<s.w;i+=14){ctx.fillStyle="#e8e8e8";ctx.beginPath();ctx.moveTo(x+i,GROUND);ctx.lineTo(x+i+7,GROUND-21);ctx.lineTo(x+i+14,GROUND);ctx.fill();rect(x+i+4,GROUND-5,4,3,"#999")}}
+function drawCat(){var x=Math.round(player.x-cam),y=Math.round(player.y);ctx.save();if(player.face<0){ctx.translate(x+player.w,0);ctx.scale(-1,1);x=0}else{x=player.x-cam}var bob=player.onGround?Math.sin(performance.now()/85)*.7:0;y+=bob;
+ rect(x+5,y+13,14,13,"#fff");rect(x+7,y+15,12,10,"#e2e2e2");rect(x+4,y+4,18,16,"#fff");rect(x+3,y+1,7,8,"#fff");rect(x+16,y+1,7,8,"#fff");rect(x+5,y+1,4,6,"#303748");rect(x+17,y+1,4,6,"#303748");rect(x+8,y+8,2,4,"#28313e");rect(x+17,y+8,2,4,"#28313e");rect(x+12,y+13,4,2,"#e77b8a");rect(x+5,y+24,6,4,"#fff");rect(x+15,y+24,6,4,"#fff");rect(x+1,y+17,5,3,"#fff");rect(x,y+15,3,3,"#fff");ctx.restore()}
+function drawEnemy(e){var x=Math.round(e.x-cam),y=e.y;rect(x+5,y+5,17,19,"#438ec9");rect(x+2,y+11,23,12,"#438ec9");rect(x+7,y+2,5,8,"#fff");rect(x+16,y+2,5,8,"#fff");rect(x+8,y+9,3,4,"#263342");rect(x+17,y+9,3,4,"#263342");rect(x+6,y+23,6,4,"#263342");rect(x+17,y+23,6,4,"#263342")}
+function drawGoal(){var x=world.goal-cam;rect(x,GROUND-90,5,90,"#e5e5e5");rect(x+5,GROUND-87,37,22,"#f4dd54");rect(x+5,GROUND-87,10,10,"#fff");rect(x+25,GROUND-75,10,10,"#fff");rect(x+5,GROUND-65,37,3,"#9b7930");rect(x-5,GROUND,16,5,"#8b5731")}
+function draw(){if(!world)return;drawBackground();world.solids.forEach(drawPlatform);world.spikes.forEach(drawSpike);world.traps.forEach(function(t){var x=t.x-cam;if(t.type==="fall"&&t.active&&!t.done){rect(x,t.y,t.w,t.h,"#bd7a43");rect(x+4,t.y+4,t.w-8,5,"#e8ad63")}if(t.type==="pop"&&t.active){var py=t.drawY||GROUND-50;rect(x+4,py+7,22,21,"#438ec9");rect(x+2,py+12,26,12,"#438ec9");rect(x+7,py+3,5,9,"#fff");rect(x+18,py+3,5,9,"#fff");rect(x+8,py+11,3,4,"#263342");rect(x+19,py+11,3,4,"#263342")}});
+ world.enemies.forEach(function(e){if(e.alive)drawEnemy(e)});drawGoal();if(!player.dead)drawCat();particles.forEach(function(p){rect(p.x-cam,p.y,4,4,p.color)});
+ if(won){rect(55,140,370,118,"rgba(22,35,51,.88)");ctx.strokeStyle="#fff";ctx.lineWidth=3;ctx.strokeRect(58,143,364,112);ctx.fillStyle="#ffe06a";ctx.font="bold 24px Trebuchet MS,Arial";ctx.textAlign="center";ctx.fillText("¡NIVEL COMPLETADO!",240,184);ctx.fillStyle="#fff";ctx.font="bold 13px Trebuchet MS,Arial";ctx.fillText("Puedes elegir otro nivel desde el menú.",240,211);ctx.fillText("Pulsa ENTER para continuar.",240,235)}
+}
+function loop(now){if(!gameLive)return;var dt=Math.min(.033,(now-lastTime)/1000||0);lastTime=now;update(dt);draw();if(gameLive)raf=requestAnimationFrame(loop)}
+function keyDown(e){var k=e.key.toLowerCase();if(["arrowleft","arrowright","arrowup"," ","w","a","d"].indexOf(k)>=0&&screens.game.classList.contains("active"))e.preventDefault();if(k==="arrowleft"||k==="a")keys.left=true;if(k==="arrowright"||k==="d")keys.right=true;if(k===" "||k==="arrowup"||k==="w")keys.jump=true;if(k==="f1"){e.preventDefault();if(world)restartLevel()}if(k==="o"&&world)die();if(k==="escape"&&screens.game.classList.contains("active"))backToLevels();if(k==="enter"&&won){showScreen("levels");makeLevelGrid()}}
+function keyUp(e){var k=e.key.toLowerCase();if(k==="arrowleft"||k==="a")keys.left=false;if(k==="arrowright"||k==="d")keys.right=false;if(k===" "||k==="arrowup"||k==="w")keys.jump=false}
+function bindTouch(){document.querySelectorAll(".touch-button").forEach(function(b){var key=b.getAttribute("data-key");function set(v,e){if(e)e.preventDefault();if(key==="left")keys.left=v;else if(key==="right")keys.right=v;else keys.jump=v;b.classList.toggle("held",v)}b.addEventListener("pointerdown",function(e){b.setPointerCapture(e.pointerId);set(true,e)});["pointerup","pointercancel","lostpointercapture"].forEach(function(ev){b.addEventListener(ev,function(e){set(false,e)})})})}
+$("openLevels").addEventListener("click",function(){makeLevelGrid();showScreen("levels")});
+$("quickPlay").addEventListener("click",function(){startLevel(0)});
+$("levelsBack").addEventListener("click",function(){showScreen("home")});
+$("restart").addEventListener("click",restartLevel);
+$("exitGame").addEventListener("click",function(){showScreen("levels");makeLevelGrid()});
+$("soundToggle").addEventListener("click",function(){soundOn=!soundOn;$("soundToggle").textContent="♫ SONIDO: "+(soundOn?"SÍ":"NO");$("soundToggle").setAttribute("aria-pressed",String(soundOn));if(soundOn){unlockAudio();startMusic()}else stopMusic()});
+window.addEventListener("keydown",keyDown,{passive:false});window.addEventListener("keyup",keyUp);window.addEventListener("blur",function(){keys.left=keys.right=keys.jump=false});bindTouch();makeLevelGrid();draw();
+})();
+</script>
+</body>
+</html>
